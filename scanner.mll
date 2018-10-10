@@ -1,0 +1,67 @@
+(* Authors:
+	Benjamin Lewinter bsl2121
+	Irina Mateescu    im2441
+	Harry Smith       hs3061
+	Yasunari Watanabe yw3239
+*)
+
+{ open Parser }
+
+rule token = parse
+  [' ' '\t' '\r' '\n'] { token lexbuf }
+| '+'  { PLUS }
+| '-'  { MINUS }
+| '*'  { TIMES }
+| '/'  { DIVIDE }
+| ';'  { SEQUENCE }
+| '='  { ASSIGN }
+| '{'  { LBRACE }
+| '}'  { RBRACE }
+| '.'  { DOT }
+| '('  { LPAREN }
+| ')'  { RPAREN }
+| '<'  { LANGLE }
+| '>'  { RANGLE }
+| '['  { LBRAK }
+| ']'  { RBRAK }
+| '\'' { SQUOTE }
+| '\"' { DQUOTE }
+| ':'  { COLON }
+| "=="     { EQ }
+| "!="     { NEQ }
+| "<="     { LEQ }
+| ">="     { GEQ }
+| "and"    { AND }
+| "or"     { OR }
+| "not"    { NOT }
+| "int"    { INTTYPE }
+| "bool"   { BOOLTYPE }
+| "char"   { CHARTYPE }
+| "float"  { FLOATTYPE }
+| "string" { STRINGTYPE }
+| "graph"  { GRAPHTYPE }
+| "node"   { NODETYPE }
+| "edge"   { EDGETYPE }
+| "-("     { LUEDGE }
+| ")-"     { RUEDGE }
+| "<("     { LDEDGE }
+| ")>"     { RDEDGE }
+| "if"     { IF }
+| "else"   { ELSE }
+| "while"  { WHILE }
+| "for"    { FOR }
+| "in"     { IN }
+| "fun"    { FUN }
+| "NULL"   { NULL }
+| "return" { RETURN }
+| "void"   { VOID }
+| ['0'-'9']+ as int_lit              { INTLIT(int_of_string int_lit) }
+| '\'' ([^'\''] as char_lit) '\''    { CHARLIT(char_lit) }
+| '\"' ([^'\"']* as string_lit) '\"' { STRINGLIT(string_lit) }
+| ("true" | "false") as bool_lit     { BOOLLIT(bool_of_string bool_lit) }
+| ['a'-'z']['0'-'9' 'a'-'z' 'A'-'Z' '_']* as id { VARIABLE(id) }
+| eof { EOF }
+| "(*" { comment lexbuf }
+and comment = parse 
+   "*)" { token lexbuf }
+	| _ { comment lexbuf }
