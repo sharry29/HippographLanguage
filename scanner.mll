@@ -18,6 +18,7 @@ rule token = parse
 | '{'  { LBRACE }
 | '}'  { RBRACE }
 | '.'  { DOT }
+| ','  { COMMA }
 | '('  { LPAREN }
 | ')'  { RPAREN }
 | '<'  { LANGLE }
@@ -39,6 +40,7 @@ rule token = parse
 | "char"   { CHARTYPE }
 | "float"  { FLOATTYPE }
 | "string" { STRINGTYPE }
+| "void"   { VOIDTYPE }
 | "graph"  { GRAPHTYPE }
 | "node"   { NODETYPE }
 | "edge"   { EDGETYPE }
@@ -50,11 +52,14 @@ rule token = parse
 | "else"   { ELSE }
 | "while"  { WHILE }
 | "for"    { FOR }
+| "for_node"    { FORNODE }
+| "for_edge"    { FOREDGE }
 | "in"     { IN }
 | "fun"    { FUN }
 | "NULL"   { NULL }
 | "return" { RETURN }
-| "void"   { VOID }
+| "break" { BREAK }
+| "continue" { CONTINUE }
 | ['0'-'9']+ as int_lit              { INTLIT(int_of_string int_lit) }
 | '\'' ([^'\''] as char_lit) '\''    { CHARLIT(char_lit) }
 | '\"' ([^'\"']* as string_lit) '\"' { STRINGLIT(string_lit) }
