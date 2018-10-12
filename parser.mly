@@ -90,7 +90,7 @@ stmt:
 | IF LPAREN expr RPAREN stmt %prec NOELSE                  { If($3, $5, Block([])) }
 | IF LPAREN expr RPAREN stmt ELSE stmt                     { If($3, $5, $7) }
 | LBRACE stmt_list RBRACE                                  { Block(List.rev $2) }
-| typ VARIABLE ASSIGN expr SEQUENCE                        { /* TODO */ }
+| typ VARIABLE ASSIGN expr SEQUENCE                        { }  /* TODO */ 
 | RETURN SEQUENCE                                          { Return Noexpr }
 | RETURN expr SEQUENCE                                     { Return $2 }
 | BREAK SEQUENCE                                           { Break }
@@ -118,3 +118,12 @@ expr:
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }
 | expr DOT VARIABLE LPAREN actuals_opt RPAREN { MCall($1, $3, $5) }
+
+edge_expr: /* TODO */ 
+  LUEDGE expr RUEDGE {}
+| LUEDGE expr RDEDGE {}
+| LDEDGE expr RUEDGE {}
+| LDEDGE expr RDEDGE {}
+
+node_expr: /* TODO */ 
+
