@@ -5,7 +5,7 @@
 	Yasunari Watanabe yw3239
 */
 
-/*%{ open Ast %}*/
+%{ open Ast %}
 
 %token PLUS MINUS TIMES DIVIDE SEQUENCE ASSIGN EOF
 %token LBRACE RBRACE DOT COMMA LPAREN RPAREN LANGLE RANGLE LBRAK RBRAK SQUOTE DQUOTE COLON
@@ -118,6 +118,32 @@ expr:
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }
 | expr DOT VARIABLE LPAREN actuals_opt RPAREN { MCall($1, $3, $5) }
+| graph_expr {}
+
+/*
+
+{ A:5 <(5)- B; C:8 }
+'A':5
+A
+'A'
+
+
+*/
+
+graph_expr:
+  LBRACE graph_item_opt RBRACE {}
+
+graph_item_opt:
+  { [] }
+| graph_item_list { List.rev $1 }
+
+graph_item_list:
+  node_edge_list {}
+| graph_item_list SEQUENCE node_edge_list {}
+
+node_edge_list:
+  node_expr                          { [$1] }
+| node_edge_list edge_expr node_expr { $3 :: $1 }
 
 edge_expr: /* TODO */ 
   LUEDGE expr RUEDGE {}
@@ -125,5 +151,6 @@ edge_expr: /* TODO */
 | LDEDGE expr RUEDGE {}
 | LDEDGE expr RDEDGE {}
 
-node_expr: /* TODO */ 
-
+node_expr: /* TODO */
+| expr COLON expr {}
+| expr            {}
