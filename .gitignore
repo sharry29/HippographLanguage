@@ -3,3 +3,7 @@ scanner.ml
 *.output
 *.mli
 parser.ml
+parser.cmi
+scanner.cmi
+scanner.cmo
+scanner.ml

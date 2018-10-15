@@ -40,6 +40,7 @@ rule token = parse
 | "char"   { CHARTYPE }
 | "float"  { FLOATTYPE }
 | "string" { STRINGTYPE }
+| "fun"    { FUNTYPE }
 | "void"   { VOIDTYPE }
 | "graph"  { GRAPHTYPE }
 | "node"   { NODETYPE }
@@ -55,16 +56,16 @@ rule token = parse
 | "for_node"    { FORNODE }
 | "for_edge"    { FOREDGE }
 | "in"     { IN }
-| "fun"    { FUN }
 | "NULL"   { NULL }
 | "return" { RETURN }
 | "break" { BREAK }
 | "continue" { CONTINUE }
-| ['0'-'9']+ as int_lit              { INTLIT(int_of_string int_lit) }
-| '\'' ([^'\''] as char_lit) '\''    { CHARLIT(char_lit) }
-| '\"' ([^'\"']* as string_lit) '\"' { STRINGLIT(string_lit) }
-| ("true" | "false") as bool_lit     { BOOLLIT(bool_of_string bool_lit) }
-| ['a'-'z']['0'-'9' 'a'-'z' 'A'-'Z' '_']* as id { VARIABLE(id) }
+| ['0'-'9']+ as int_lit                 { INTLIT(int_of_string int_lit) }
+| '\'' ([^'\''] as char_lit) '\''       { CHARLIT(char_lit) }
+| ['0'-'9']*'.'['0'-'9']+ as float_lit  { FLOATLIT(float_lit)}
+| '\"' ([^'\"']* as string_lit) '\"'    { STRINGLIT(string_lit) }
+| ("true" | "false") as bool_lit        { BOOLLIT(bool_of_string bool_lit) }
+| ['a'-'z' 'A'-'Z']['0'-'9' 'a'-'z' 'A'-'Z' '_']* as id { VARIABLE(id) }
 | eof { EOF }
 | "(*" { comment lexbuf }
 and comment = parse 

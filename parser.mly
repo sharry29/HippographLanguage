@@ -10,9 +10,9 @@
 %token PLUS MINUS TIMES DIVIDE SEQUENCE ASSIGN EOF
 %token LBRACE RBRACE DOT COMMA LPAREN RPAREN LANGLE RANGLE LBRAK RBRAK SQUOTE DQUOTE COLON
 %token EQ NEQ LEQ GEQ AND OR NOT
-%token INTTYPE BOOLTYPE CHARTYPE FLOATTYPE STRINGTYPE GRAPHTYPE NODETYPE EDGETYPE VOIDTYPE
+%token INTTYPE BOOLTYPE CHARTYPE FLOATTYPE STRINGTYPE FUNTYPE GRAPHTYPE NODETYPE EDGETYPE VOIDTYPE
 %token LUEDGE RUEDGE LDEDGE RDEDGE
-%token IF ELSE NOELSE WHILE FOR FORNODE FOREDGE IN FUN NULL RETURN BREAK CONTINUE
+%token IF ELSE NOELSE WHILE FOR FORNODE FOREDGE IN NULL RETURN BREAK CONTINUE
 %token <int> INTLIT
 %token <char> CHARLIT
 %token <string> STRINGLIT
@@ -28,6 +28,7 @@
 %nonassoc EQ NEQ 
 %nonassoc LEQ GEQ LT GT
 %right NOT
+%nonassoc LPAREN RPAREN
 %nonassoc NOELSE
 %nonassoc ELSE
 
@@ -47,7 +48,8 @@ vdecl:
   typ VARIABLE SEQUENCE { ($1, $2) }
 
 fdecl:
-  typ VARIABLE LPAREN args_opt RPAREN LBRACE stmt_list RBRACE {}
+  typ VARIABLE LPAREN args_opt RPAREN LBRACE stmt_list RBRACE 
+    { { typ = $1; fname = $2; args = $4; body = List.rev $7 } }
 
 args_opt:
   { [] }
@@ -74,6 +76,7 @@ typ:
 | CHARTYPE   { Char }
 | FLOATTYPE  { Float}
 | STRINGTYPE { String }
+| FUNTYPE    { Fun }
 | GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
 | NODETYPE  LANGLE typ COLON typ RANGLE { Node($3, $5) }
 | EDGETYPE  LANGLE typ RANGLE { Edge($3) }
@@ -90,17 +93,33 @@ stmt:
 | IF LPAREN expr RPAREN stmt %prec NOELSE                  { If($3, $5, Block([])) }
 | IF LPAREN expr RPAREN stmt ELSE stmt                     { If($3, $5, $7) }
 | LBRACE stmt_list RBRACE                                  { Block(List.rev $2) }
-| typ VARIABLE ASSIGN expr SEQUENCE                        { }  /* TODO */ 
+| typ VARIABLE SEQUENCE                                    { Vdecl($1, $2, Noexpr) }
+| typ VARIABLE ASSIGN expr SEQUENCE                        { Vdecl($1, $2, Asn($2, $4)) }
 | RETURN SEQUENCE                                          { Return Noexpr }
 | RETURN expr SEQUENCE                                     { Return $2 }
 | BREAK SEQUENCE                                           { Break }
 | CONTINUE SEQUENCE                                        { Continue }
+
+/*
+
+x = lambda (n1, n2): n1 + n2
+
+void main() {
+  fun x =  int (int n1; int n2) (n1 + n2);
+
+  int res = x(5,4);
+
+}
+
+*/
 
 expr:
   INTLIT                { Intlit($1) }
 | CHARLIT               { Charlit($1) }
 | STRINGLIT             { Stringlit($1) }
 | BOOLLIT               { Boollit($1) }
+| typ LPAREN args_opt RPAREN LPAREN expr RPAREN { Funsig($1, $3, $6) }
+| NULL                  { Null }
 | VARIABLE              { Var($1) }
 | expr PLUS   expr      { Binop($1, Add, $3) }
 | expr MINUS  expr      { Binop($1, Sub, $3) }
@@ -118,39 +137,27 @@ expr:
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }
 | expr DOT VARIABLE LPAREN actuals_opt RPAREN { MCall($1, $3, $5) }
-| graph_expr {}
-
-/*
-
-{ A:5 <(5)- B; C:8 }
-'A':5
-A
-'A'
-
-
-*/
-
-graph_expr:
-  LBRACE graph_item_opt RBRACE {}
+| LBRAK graph_item_opt RBRAK                  { GraphExpr($2) }
 
 graph_item_opt:
   { [] }
 | graph_item_list { List.rev $1 }
 
 graph_item_list:
-  node_edge_list {}
-| graph_item_list SEQUENCE node_edge_list {}
+  node_edge_list                          { [$1] }
+| graph_item_list SEQUENCE                { [$1] }
+| graph_item_list SEQUENCE node_edge_list { $3 :: $1 }
 
 node_edge_list:
   node_expr                          { [$1] }
-| node_edge_list edge_expr node_expr { $3 :: $1 }
+| node_edge_list edge_expr node_expr { $3 :: $2 :: $1 }
 
-edge_expr: /* TODO */ 
-  LUEDGE expr RUEDGE {}
-| LUEDGE expr RDEDGE {}
-| LDEDGE expr RUEDGE {}
-| LDEDGE expr RDEDGE {}
+edge_expr:
+  LUEDGE expr RUEDGE { Edge($2) }
+| LDEDGE expr RDEDGE { Edge($2) }
+| LUEDGE expr RDEDGE { Redge($2)}
+| LDEDGE expr RUEDGE { Ledge($2) }
 
-node_expr: /* TODO */
-| expr COLON expr {}
-| expr            {}
+node_expr:
+| expr COLON expr { Node($1, $3) }
+| expr            { Node($1, Noexpr)}
