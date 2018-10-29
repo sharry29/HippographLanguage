@@ -14,6 +14,7 @@
 %token LUEDGE RUEDGE LDEDGE RDEDGE
 %token IF ELSE NOELSE WHILE FOR FORNODE FOREDGE IN NULL RETURN BREAK CONTINUE
 %token <int> INTLIT
+%token <string> FLOATLIT
 %token <char> CHARLIT
 %token <string> STRINGLIT
 %token <bool> BOOLLIT
@@ -41,8 +42,8 @@ program: decls EOF { $1 }
 
 decls: 
   { [], [] }
-| program vdecl { ($2 :: fst $1), snd $1 }
-| program fdecl { fst $1, ($2 :: snd $1) }
+| decls vdecl { ($2 :: fst $1), snd $1 }
+| decls fdecl { fst $1, ($2 :: snd $1) }
 
 vdecl:
   typ VARIABLE SEQUENCE { ($1, $2) }
@@ -77,9 +78,9 @@ typ:
 | FLOATTYPE  { Float}
 | STRINGTYPE { String }
 | FUNTYPE    { Fun }
-| GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
+/*| GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
 | NODETYPE  LANGLE typ COLON typ RANGLE { Node($3, $5) }
-| EDGETYPE  LANGLE typ RANGLE { Edge($3) }
+| EDGETYPE  LANGLE typ RANGLE { Edge($3) } */
 
 stmt_list:
   { [] }
@@ -115,6 +116,7 @@ void main() {
 
 expr:
   INTLIT                { Intlit($1) }
+| FLOATLIT              { Floatlit($1) }
 | CHARLIT               { Charlit($1) }
 | STRINGLIT             { Stringlit($1) }
 | BOOLLIT               { Boollit($1) }
@@ -137,7 +139,7 @@ expr:
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }
 | expr DOT VARIABLE LPAREN actuals_opt RPAREN { MCall($1, $3, $5) }
-| LBRAK graph_item_opt RBRAK                  { GraphExpr($2) }
+/* | LBRAK graph_item_opt RBRAK                  { GraphExpr($2) }
 
 graph_item_opt:
   { [] }
@@ -161,3 +163,4 @@ edge_expr:
 node_expr:
 | expr COLON expr { Node($1, $3) }
 | expr            { Node($1, Noexpr)}
+*/
