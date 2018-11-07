@@ -29,4 +29,12 @@ type sstmt =
 	| SReturn of sexpr
 	| SBreak
 	| SContinue
-	
+
+type sfdecl = {
+	typ: typ;
+	fname: string;
+	args: binding list;
+	body: sstmt list;
+}
+
+type sprogram = binding list * sfdecl list
