@@ -20,3 +20,18 @@ test:
 	ocamlc -c hippograph.ml
 	ocamlc -o hippograph parseraux.cmo parser.cmo scanner.cmo hippograph.cmo
 	./hippograph < hello.hpg
+
+# "make microc.native" compiles the compiler
+
+.PRECIOUS : hippograph.native
+microc.native :
+	opam config exec -- \
+	ocamlbuild -no-hygiene -use-ocamlfind -pkgs llvm,llvm.analysis -cflags -w,+a-4 \
+		hippograph.native
+
+# "make clean" removes all generated files
+
+.PHONY : clean
+clean :
+	ocamlbuild -clean
+	rm -rf testall.log *.diff
