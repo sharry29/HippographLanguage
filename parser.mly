@@ -5,7 +5,10 @@
 	Yasunari Watanabe yw3239
 */
 
-%{ open Ast %}
+%{
+  open Ast
+  open Parseraux  
+%}
 
 %token PLUS MINUS TIMES DIVIDE SEQUENCE ASSIGN EOF
 %token LBRACE RBRACE DOT COMMA LPAREN RPAREN LANGLE RANGLE LBRAK RBRAK SQUOTE DQUOTE COLON
@@ -78,9 +81,9 @@ typ:
 | FLOATTYPE  { Float}
 | STRINGTYPE { String }
 | FUNTYPE    { Fun }
-/*| GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
+| GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
 | NODETYPE  LANGLE typ COLON typ RANGLE { Node($3, $5) }
-| EDGETYPE  LANGLE typ RANGLE { Edge($3) } */
+| EDGETYPE  LANGLE typ RANGLE { Edge($3) }
 
 stmt_list:
   { [] }
@@ -100,19 +103,6 @@ stmt:
 | RETURN expr SEQUENCE                                     { Return $2 }
 | BREAK SEQUENCE                                           { Break }
 | CONTINUE SEQUENCE                                        { Continue }
-
-/*
-
-x = lambda (n1, n2): n1 + n2
-
-void main() {
-  fun x =  int (int n1; int n2) (n1 + n2);
-
-  int res = x(5,4);
-
-}
-
-*/
 
 expr:
   INTLIT                { Intlit($1) }
@@ -139,28 +129,26 @@ expr:
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }
 | expr DOT VARIABLE LPAREN actuals_opt RPAREN { MCall($1, $3, $5) }
-/* | LBRAK graph_item_opt RBRAK                  { GraphExpr($2) }
+| LBRAK graph_item_opt RBRAK                  { match $2 with (node_list, edge_list) ->
+                                                  GraphExpr(node_list, edge_list) }
 
 graph_item_opt:
-  { [] }
-| graph_item_list { List.rev $1 }
+  { [], [] }
+| graph_item_list { match $1 with (node_list, edge_list) -> 
+                      List.rev node_list, List.rev edge_list }
 
 graph_item_list:
-  node_edge_list                          { [$1] }
-| graph_item_list SEQUENCE                { [$1] }
-| graph_item_list SEQUENCE node_edge_list { $3 :: $1 }
+  node_edge_list                          { $1 }
+| graph_item_list SEQUENCE                { $1 }
+| graph_item_list SEQUENCE node_edge_list { merge_node_edge_lists $1 $3 }
 
 node_edge_list:
-  node_expr                          { [$1] }
-| node_edge_list edge_expr node_expr { $3 :: $2 :: $1 }
-
-edge_expr:
-  LUEDGE expr RUEDGE { Edge($2) }
-| LDEDGE expr RDEDGE { Edge($2) }
-| LUEDGE expr RDEDGE { Redge($2)}
-| LDEDGE expr RUEDGE { Ledge($2) }
+  node_expr                                   { [$1], [] }
+| node_edge_list LUEDGE expr RUEDGE node_expr { update_node_edge_list_with_edge $1 $3 $5  }
+| node_edge_list LDEDGE expr RDEDGE node_expr { update_node_edge_list_with_edge $1 $3 $5  }
+| node_edge_list LUEDGE expr RDEDGE node_expr { update_node_edge_list_with_redge $1 $3 $5  }
+| node_edge_list LDEDGE expr RUEDGE node_expr { update_node_edge_list_with_ledge $1 $3 $5  }
 
 node_expr:
-| expr COLON expr { Node($1, $3) }
-| expr            { Node($1, Noexpr)}
-*/
+| expr COLON expr { ($1, $3) }
+| expr            { ($1, Noexpr) }

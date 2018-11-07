@@ -6,6 +6,9 @@ type typ =
   | String
   | Bool
   | Void
+  | Graph of typ * typ * typ
+  | Node of typ * typ
+  | Edge of typ
 
 type binding = typ * string
 
@@ -40,7 +43,10 @@ type expr =
   | Asn of string * expr
   | FCall of string * expr list
   | MCall of expr * string * expr list
+  | GraphExpr of node_list * edge_list
   | Noexpr
+and node_list = (expr * expr) list
+and edge_list = (expr * expr * expr) list
 
 type stmt = 
   | For of expr * expr * expr * stmt
