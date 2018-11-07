@@ -90,7 +90,8 @@ stmt_list:
 | stmt_list stmt { $2 :: $1 }
 
 stmt:
-  FOR LPAREN expr SEQUENCE expr SEQUENCE expr RPAREN stmt  { For($3, $5, $7, $9) }
+  expr SEQUENCE                                            { Expr $1 }
+| FOR LPAREN expr SEQUENCE expr SEQUENCE expr RPAREN stmt  { For($3, $5, $7, $9) }
 | FORNODE LPAREN VARIABLE COLON VARIABLE RPAREN stmt       { ForNode($3, $5, $7) }
 | FOREDGE LPAREN VARIABLE COLON VARIABLE RPAREN stmt       { ForEdge($3, $5, $7) }
 | WHILE LPAREN expr RPAREN stmt                            { While($3, $5) }

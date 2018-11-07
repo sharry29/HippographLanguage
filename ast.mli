@@ -49,6 +49,7 @@ and node_list = (expr * expr) list
 and edge_list = (expr * expr * expr) list
 
 type stmt = 
+  | Expr of expr
   | For of expr * expr * expr * stmt
   | ForNode of string * string * stmt
   | ForEdge of string * string * stmt
