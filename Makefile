@@ -24,7 +24,7 @@ test:
 # "make microc.native" compiles the compiler
 
 .PRECIOUS : hippograph.native
-microc.native :
+hippograph.native :
 	opam config exec -- \
 	ocamlbuild -no-hygiene -use-ocamlfind -pkgs llvm,llvm.analysis -cflags -w,+a-4 \
 		hippograph.native

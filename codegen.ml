@@ -53,6 +53,7 @@ let translate (globals, functions) =
     let rec stmt builder = function
 	  | Block sl -> List.fold_left stmt builder sl
         (* Generate code for this expression, return resulting builder *)
+      | Expr e -> let _ = expr builder e in builder 
       | Return e -> let _ = match fdecl.typ with
                               (* Special "return nothing" instr *)
                               Void -> L.build_ret_void builder 
