@@ -21,7 +21,7 @@ let translate (globals, functions) =
   	let print_t : L.lltype = 
       	L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   	let print_func : L.llvalue = 
-    	L.declare_function "printf" print_t the_module in
+    	L.declare_function "print" print_t the_module in
 
     let function_decls : (L.llvalue * fdecl) StringMap.t =
 	    let function_decl m (fdecl : fdecl) =
@@ -41,7 +41,7 @@ let translate (globals, functions) =
 	    let rec expr builder (e : expr) = match e with
 	    | Stringlit s -> L.build_global_stringptr s "str" builder
 	    | FCall ("print", [e]) ->
-	  		 L.build_call print_func [| str_format_str ; ( expr builder e ) |] "printf" builder
+	  		 L.build_call print_func [| str_format_str ; ( expr builder e ) |] "" builder
 	  	in 
 	let add_terminal builder instr =
       (* The current block where we're inserting instr *)
