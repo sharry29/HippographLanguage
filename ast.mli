@@ -6,9 +6,9 @@ type typ =
   | String
   | Bool
   | Void
-  | Graph of typ * typ * typ
+(*  | Graph of typ * typ * typ
   | Node of typ * typ
-  | Edge of typ
+  | Edge of typ*)
 
 type binding = typ * string
 
@@ -65,7 +65,78 @@ type fdecl = {typ: typ; fname:string; args:binding list; body:stmt list}
 
 type program = binding list * fdecl list
 
+let string_of_op = function
+    Add -> "+"
+  | Sub -> "-"
+  | Mult -> "*"
+  | Div -> "/"
+  | Eq -> "=="
+  | Neq -> "!="
+  | Langle -> "<"
+  | Leq -> "<="
+  | Rangle -> ">"
+  | Geq -> ">="
+  | And -> "&&"
+  | Or -> "||"
 
+let string_of_uop = function
+    Neg -> "-"
+  | Not -> "!"
+
+let rec string_of_expr = function
+    Intlit(l) -> string_of_int l
+  | Floatlit(l) -> l
+  | Boollit(true) -> "true"
+  | Boollit(false) -> "false"
+  | Var(s) -> s
+  | Binop(e1, o, e2) ->
+      string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
+  | Unop(o, e) -> string_of_uop o ^ string_of_expr e
+  | Asn(v, e) -> v ^ " = " ^ string_of_expr e
+  | FCall(f, el) ->
+      f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" 
+  | MCall(f, el) ->
+      f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Noexpr -> ""
+
+let rec string_of_stmt = function
+    Block(stmts) ->
+      "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
+  | Expr(expr) -> string_of_expr expr ^ ";\n";
+  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n";
+  | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
+  | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
+      string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
+  | For(e1, e2, e3, s) ->
+      "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
+      string_of_expr e3  ^ ") " ^ string_of_stmt s
+  | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
+
+let rec string_of_typ = function
+    Int    -> "int"
+  | Bool   -> "bool"
+  | Float  -> "float"
+  | Void   -> "void"
+  | Char   -> "char"
+(*  | Fun    -> "fun"*)
+  | String -> "string"
+  | Void   -> "void"
+(*  | Graph(nm, nvl, evl) -> "graph<" ^ string_of_typ nm ^ ", " ^ string_of_typ nvl ^ ", " ^ string_of_typ evl ^ ", " ^ ">"
+  | Node(nm, vl)  -> "node<" ^ string_of_typ nm ^ ", " ^ string_of_typ vl ^ ">"
+  | Edge(vl)      -> "edge<" ^ string_of_typ vl ^ ">"
+*)
+let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
+
+let string_of_fdecl fdecl = 
+  string_of_typ fdecl.typ ^ " " ^
+  fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.args) ^
+  ")\n{\n" ^
+  String.concat "" (List.map string_of_vdecl fdecl.body) ^ 
+  "}\n"
+
+let string_of_program (vars, funs) = 
+  String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
+  String.concat "\n" (List.map string_of_fdecl funcs)
 (* type stmt =
   For of expr * expr * expr * stmt
   ForNode of string * string * stmt
