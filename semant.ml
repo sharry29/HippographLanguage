@@ -28,7 +28,7 @@ let check (globals, funcs) =
       fname = name; 
       args = [(ty, "x")];
       body = [] } map
-    in List.fold_left add_bind StringMap.empty [ ("print_int", Int) ]
+    in List.fold_left add_bind StringMap.empty [ ("print_int", Int); ("print", String) ]
   in
   (* Add function name to symbol table *)
   let add_func map fd = 
@@ -130,7 +130,7 @@ let check (globals, funcs) =
             in (check_asn ft et err, e')
           in 
           let args' = List.map2 check_call fd.args args
-          in (fd.typ, SMCall(expr e, mname, args'))
+          in (fd.typ, SMCall(expr e, mname, args')) *)
       | FCall(fname, args) as fcall -> 
           let fd = find_func fname in
           let param_length = List.length fd.args in
@@ -145,7 +145,7 @@ let check (globals, funcs) =
           in 
           let args' = List.map2 check_call fd.args args
           in (fd.typ, SFCall(fname, args'))
-  *)  in
+    in
 
     let check_bool_expr e = 
       let (t', e') = expr e
