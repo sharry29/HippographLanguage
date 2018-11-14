@@ -1,6 +1,7 @@
 hippograph.native:
 	opam config exec -- \
-	ocamlbuild -use-ocamlfind hippograph.native
+	ocamlbuild -use-ocamlfind -pkgs llvm,llvm.analysis -cflags -w,+a-4 \
+		hippograph.native
 
 .PHONY: clean
 clean:
