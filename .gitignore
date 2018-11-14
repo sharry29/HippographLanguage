@@ -7,3 +7,7 @@ parser.cmi
 scanner.cmi
 scanner.cmo
 scanner.ml
+_build/
+testall.log
+*.native
+hippograph
