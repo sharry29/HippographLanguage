@@ -8,6 +8,10 @@ scanner.cmi
 scanner.cmo
 scanner.ml
 _build/
-testall.log
 *.native
 hippograph
+*.ll
+*.exe
+*.s
+*.log
+*.out
