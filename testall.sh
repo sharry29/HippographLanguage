@@ -92,9 +92,9 @@ Check() {
     generatedfiles=""
 
     generatedfiles="$generatedfiles ${basename}.ll ${basename}.s ${basename}.exe ${basename}.out" &&
-    Run "$HIPPOGRAPH" "$1" ">" "${basename}.ll" &&
+    Run "$HIPPOGRAPH" "<" "$1" ">" "${basename}.ll" &&
     Run "$LLC" "-relocation-model=pic" "${basename}.ll" ">" "${basename}.s" &&
-    # Run "$CC" "-o" "${basename}.exe" "${basename}.s" "printbig.o" &&
+    Run "$CC" "-o" "${basename}.exe" "${basename}.s" &&
     Run "./${basename}.exe" > "${basename}.out" &&
     Compare ${basename}.out ${reffile}.out ${basename}.diff
 
@@ -176,7 +176,7 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-*.hpg tests/fail-*.hpg"
+    files="test/test-*.hpg test/fail-*.hpg"
 fi
 
 for file in $files
