@@ -6,9 +6,9 @@ type typ =
   | String
   | Bool
   | Void
-(*  | Graph of typ * typ * typ
+  | Graph of typ * typ * typ
   | Node of typ * typ
-  | Edge of typ*)
+  | Edge of typ
 
 type binding = typ * string
 
@@ -68,20 +68,19 @@ type program = binding list * fdecl list
 let string_of_op = function
     Add -> "+"
   | Sub -> "-"
-  | Mult -> "*"
+  | Mul -> "*"
   | Div -> "/"
   | Eq -> "=="
   | Neq -> "!="
-  | Langle -> "<"
+  | Lt -> "<"
   | Leq -> "<="
-  | Rangle -> ">"
+  | Gt -> ">"
   | Geq -> ">="
   | And -> "&&"
   | Or -> "||"
 
 let string_of_uop = function
-    Neg -> "-"
-  | Not -> "!"
+    Not -> "!"
 
 let rec string_of_expr = function
     Intlit(l) -> string_of_int l
@@ -89,15 +88,16 @@ let rec string_of_expr = function
   | Boollit(true) -> "true"
   | Boollit(false) -> "false"
   | Var(s) -> s
-  | Binop(e1, o, e2) ->
+  | Stringlit(l) -> l
+  (*| Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_uop o ^ string_of_expr e
   | Asn(v, e) -> v ^ " = " ^ string_of_expr e
   | FCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" 
-  | MCall(f, el) ->
+  | MCall(caller, f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-  | Noexpr -> ""
+*)| Noexpr -> ""
 
 let rec string_of_stmt = function
     Block(stmts) ->
@@ -112,7 +112,9 @@ let rec string_of_stmt = function
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
 
-let rec string_of_typ = function
+(*let rec string_of_typ (x : typ) : string =
+   match x with *)
+let string_of_typ = function
     Int    -> "int"
   | Bool   -> "bool"
   | Float  -> "float"
@@ -131,15 +133,14 @@ let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.args) ^
   ")\n{\n" ^
-  String.concat "" (List.map string_of_vdecl fdecl.body) ^ 
+  String.concat "" (List.map string_of_stmt fdecl.body) ^ 
   "}\n"
 
-let string_of_program (vars, funs) = 
+let string_of_program (vars, funcs) = 
   String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
   String.concat "\n" (List.map string_of_fdecl funcs)
 (* type stmt =
   For of expr * expr * expr * stmt
   ForNode of string * string * stmt
   ForEdge of string * string * stmt
-  While of expr * stmt
-  *)
+  While of expr * stmt*)
