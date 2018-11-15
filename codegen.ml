@@ -54,40 +54,37 @@ let translate (globals, functions) =
     (* Construct the function's "locals": formal arguments and locally
        declared variables.  Allocate each on the stack, initialize their
        value, if appropriate, and remember their values in the "locals" map *)
-    let local_vars =
-      let add_arg m (t, n) p = L.set_value_name n p;
-        let local = L.build_alloca (ltype_of_typ t) n builder in
-        ignore (L.build_store p local builder);
-        StringMap.add n local m in
+    let add_arg m (t, n) p = L.set_value_name n p;
+      let local = L.build_alloca (ltype_of_typ t) n builder in
+      ignore (L.build_store p local builder);
+      StringMap.add n local m in
 
-      let add_local m (t, n) =
-        let local_var = L.build_alloca (ltype_of_typ t) n builder
-        in StringMap.add n local_var m in
-      
-      let args = List.fold_left2 add_arg StringMap.empty sfdecl.sargs
+    let add_local m (t, n) =
+      let local_var = L.build_alloca (ltype_of_typ t) n builder
+      in StringMap.add n local_var m in
+
+    let local_vars =
+      List.fold_left2 add_arg StringMap.empty sfdecl.sargs
           (Array.to_list (L.params the_function)) in
-      
-      args in
-      (* List.fold_left add_local formals fdecl.A.locals in *)
 
     (* Return the value for a variable or formal argument *)
-    let lookup n = try StringMap.find n local_vars
-                   with Not_found -> StringMap.find n global_vars
+    let lookup vars n = try StringMap.find n vars
+                        with Not_found -> StringMap.find n global_vars
     in
 
-    let rec expr builder ((_,e) : sexpr) = match e with
+    let rec expr vars builder ((_,e) : sexpr) = match e with
     | SStringlit s -> L.build_global_stringptr s "str" builder
     | SIntlit i -> L.const_int i32_t i
     | SBoollit b -> L.const_int i1_t (if b then 1 else 0)
-    | SVar s -> L.build_load (lookup s) s builder
+    | SVar s -> L.build_load (lookup vars s) s builder
     | SUnop(op, e) ->
-        let e' = expr builder e in
+        let e' = expr vars builder e in
         (match op with
           A.Neg     -> L.build_neg
         | A.Not     -> L.build_not) e' "tmp" builder
     | SBinop (e1, op, e2) ->
-        let e1' = expr builder e1
-        and e2' = expr builder e2 in
+        let e1' = expr vars builder e1
+        and e2' = expr vars builder e2 in
         (match op with
           A.Add     -> L.build_add
         | A.Sub     -> L.build_sub
@@ -103,19 +100,19 @@ let translate (globals, functions) =
         | A.Geq     -> L.build_icmp L.Icmp.Sge
         ) e1' e2' "tmp" builder
     | SFCall ("print", [e]) ->
-       L.build_call print_func [| str_format_str ; ( expr builder e ) |] "" builder
-    | SFCall ("print_int", [e]) ->
-       L.build_call print_func [| int_format_str ; ( expr builder e ) |] "" builder
-    | SFCall ("print_bool", [e]) ->
-  		 L.build_call print_func [| int_format_str ; ( expr builder e ) |] "" builder
+       L.build_call print_func [| str_format_str ; ( expr vars builder e ) |] "" builder
+    | SFCall ("print_int", [e]) | SFCall ("print_bool", [e]) ->
+  		 L.build_call print_func [| int_format_str ; ( expr vars builder e ) |] "" builder
     | SFCall (f, act) ->
        let (fdef, sfdecl) = StringMap.find f function_decls in
-       let actuals = List.rev (List.map (expr builder) (List.rev act)) in
+       let actuals = List.rev (List.map (expr vars builder) (List.rev act)) in
        let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
        L.build_call fdef (Array.of_list actuals) result builder
     | SAsn (s, e) ->
-        let e' = expr builder e in
-        ignore (L.build_store e' (lookup s) builder); e'
+       let e' = expr vars builder e in
+       ignore (L.build_store e' (lookup vars s) builder); e'
+    | SNoexpr ->
+       L.undef (L.void_type context) (* placeholder *)
   	in 
 
     let add_terminal builder instr =
@@ -125,22 +122,25 @@ let translate (globals, functions) =
       | None -> ignore (instr builder)
     in
 
-    let rec stmt builder = function
+    let rec stmt (vars, builder) = function
 	    | SBlock sl ->
-        List.fold_left stmt builder sl
+        List.fold_left stmt (vars, builder) sl
       (* Generate code for this expression, return resulting builder *)
       | SExpr e ->
-        let _ = expr builder e in builder 
+        let _ = expr vars builder e in (vars, builder)
+      | SVdecl (ty, s, e) ->
+        let vars' = add_local vars (ty, s) in
+        let _ = expr vars' builder e in (vars', builder)
       | SReturn e ->
         let _ = match sfdecl.styp with
                 (* Special "return nothing" instr *)
                 | A.Void -> L.build_ret_void builder 
                 (* Build return statement *)
-                | _ -> L.build_ret (expr builder e) builder 
-        in builder
+                | _ -> L.build_ret (expr vars builder e) builder 
+        in (vars, builder)
     in
 
-    let builder = stmt builder (SBlock sfdecl.sbody) in
+    let (_, builder) = stmt (local_vars, builder) (SBlock sfdecl.sbody) in
 
     add_terminal builder (match sfdecl.styp with
                             A.Void -> L.build_ret_void

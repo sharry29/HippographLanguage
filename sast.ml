@@ -20,7 +20,7 @@ and sx =
 
 type sstmt =
 	  SExpr of sexpr
-    | SFor of sexpr * sexpr * sexpr * sstmt
+  | SFor of sexpr * sexpr * sexpr * sstmt
 	| SForNode of string * string * sstmt
 	| SForEdge of string * string * sstmt
 	| SWhile of sexpr * sstmt

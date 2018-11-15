@@ -1,0 +1,13 @@
+int main() {
+	print_int(addone(41));
+	print_int(add(120; 3));
+	return 0;
+}
+
+int addone(int x) {
+	return x + 1;
+}
+
+int add(int x; int y) {
+	return x + y;
+}

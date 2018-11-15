@@ -1,0 +1,9 @@
+int res;
+
+int main() {
+  res = 7;
+	int x = res + 2;
+	y = x - 1; 
+	print_int(y);	
+	return 0;
+}
