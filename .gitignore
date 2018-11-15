@@ -14,4 +14,4 @@ hippograph
 *.exe
 *.s
 *.log
-*.out
+/*.out

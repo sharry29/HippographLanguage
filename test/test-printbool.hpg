@@ -1,0 +1,7 @@
+int x;
+
+int main() {
+	x = -42;
+	print_bool(true);
+	return 0;
+}

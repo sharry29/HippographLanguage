@@ -26,12 +26,12 @@
 %left SEQUENCE
 %left DOT
 %right ASSIGN
-%left PLUS MINUS
-%left TIMES DIVIDE
 %left AND OR
 %nonassoc EQ NEQ 
 %nonassoc LEQ GEQ LT GT
-%right NOT
+%left PLUS MINUS
+%left TIMES DIVIDE
+%right NEG NOT
 %nonassoc LPAREN RPAREN
 %nonassoc NOELSE
 %nonassoc ELSE
@@ -126,6 +126,7 @@ expr:
 | expr GEQ expr         { Binop($1, Geq, $3) }
 | expr LT expr          { Binop($1, Lt, $3) }
 | expr GT expr          { Binop($1, Gt, $3) }
+| MINUS expr %prec NEG  { Unop(Neg, $2) }
 | NOT expr              { Unop(Not, $2) }
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }

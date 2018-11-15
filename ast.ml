@@ -28,6 +28,7 @@ type binop =
 
 type unop = 
   | Not
+  | Neg
 
 type expr = 
   | Intlit of int
@@ -81,6 +82,7 @@ let string_of_op = function
 
 let string_of_uop = function
     Not -> "!"
+  | Neg -> "-"
 
 let rec string_of_expr = function
     Intlit(l) -> string_of_int l
@@ -89,10 +91,10 @@ let rec string_of_expr = function
   | Boollit(false) -> "false"
   | Var(s) -> s
   | Stringlit(l) -> l
-  (*| Binop(e1, o, e2) ->
+  | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
-  | Unop(o, e) -> string_of_uop o ^ string_of_expr e
-  | Asn(v, e) -> v ^ " = " ^ string_of_expr e *)
+  | Unop(o, e) -> string_of_uop o ^ string_of_expr e 
+  | Asn(v, e) -> v ^ " = " ^ string_of_expr e
   | FCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" 
 (*  | MCall(caller, f, el) ->
