@@ -97,9 +97,9 @@ let rec string_of_expr = function
   | Asn(v, e) -> v ^ " = " ^ string_of_expr e
   | FCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" 
-(*  | MCall(caller, f, el) ->
+  | MCall(caller, f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-*)| Noexpr -> ""
+  | Noexpr -> ""
 
 let rec string_of_stmt = function
     Block(stmts) ->
@@ -114,21 +114,19 @@ let rec string_of_stmt = function
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
 
-(*let rec string_of_typ (x : typ) : string =
-   match x with *)
-let string_of_typ = function
+let rec string_of_typ = function
     Int    -> "int"
   | Bool   -> "bool"
   | Float  -> "float"
   | Void   -> "void"
   | Char   -> "char"
-(*  | Fun    -> "fun"*)
+  | Fun    -> "fun"
   | String -> "string"
   | Void   -> "void"
-(*  | Graph(nm, nvl, evl) -> "graph<" ^ string_of_typ nm ^ ", " ^ string_of_typ nvl ^ ", " ^ string_of_typ evl ^ ", " ^ ">"
+  | Graph(nm, nvl, evl) -> "graph<" ^ string_of_typ nm ^ ", " ^ string_of_typ nvl ^ ", " ^ string_of_typ evl ^ ">"
   | Node(nm, vl)  -> "node<" ^ string_of_typ nm ^ ", " ^ string_of_typ vl ^ ">"
   | Edge(vl)      -> "edge<" ^ string_of_typ vl ^ ">"
-*)
+
 let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
 
 let string_of_fdecl fdecl = 
