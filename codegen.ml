@@ -59,7 +59,7 @@ let translate (globals, functions) =
       ignore (L.build_store p local builder);
       StringMap.add n local m in
 
-    let add_local m (t, n) =
+    let add_local builder m (t, n) =
       let local_var = L.build_alloca (ltype_of_typ t) n builder
       in StringMap.add n local_var m in
 
@@ -129,7 +129,7 @@ let translate (globals, functions) =
       | SExpr e ->
         let _ = expr vars builder e in (vars, builder)
       | SVdecl (ty, s, e) ->
-        let vars' = add_local vars (ty, s) in
+        let vars' = add_local builder vars (ty, s) in
         let _ = expr vars' builder e in (vars', builder)
       | SReturn e ->
         let _ = match sfdecl.styp with
@@ -138,6 +138,20 @@ let translate (globals, functions) =
                 (* Build return statement *)
                 | _ -> L.build_ret (expr vars builder e) builder 
         in (vars, builder)
+      | SIf (p, then_stmt, else_stmt) ->
+        let bool_val = expr vars builder p in
+        let merge_bb = L.append_block context "merge" the_function in
+
+        let then_bb = L.append_block context "then" the_function in
+        let _, builder' = stmt (vars, L.builder_at_end context then_bb) then_stmt in
+        add_terminal builder' (L.build_br merge_bb);
+
+        let else_bb = L.append_block context "else" the_function in
+        let _, builder' = stmt (vars, L.builder_at_end context else_bb) else_stmt in
+        add_terminal builder' (L.build_br merge_bb);
+
+        ignore (L.build_cond_br bool_val then_bb else_bb builder);
+        (vars, L.builder_at_end context merge_bb)
     in
 
     let (_, builder) = stmt (local_vars, builder) (SBlock sfdecl.sbody) in

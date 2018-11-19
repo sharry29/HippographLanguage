@@ -1,0 +1,7 @@
+int main() {
+  if (true) {
+    print("True!");
+  }
+	
+  return 0;
+}

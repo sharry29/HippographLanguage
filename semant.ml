@@ -158,7 +158,7 @@ let check (globals, funcs) =
 
     let check_bool_expr vars e = 
       let (t', e') = expr vars e
-      and err = "expected Boolean expression in " (*^ string_of_expr e*)
+      and err = "expected Boolean expression in " ^ string_of_expr e
       in if t' != Bool then raise (Failure err) else (t', e') 
     in
 
