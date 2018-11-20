@@ -98,7 +98,18 @@ let check (globals, funcs) =
         and (rt, e') = expr vars e in
         let err = "illegal assignment " ^ string_of_typ lt ^ " = " ^ 
           string_of_typ rt ^ " in " ^ string_of_expr ex
-        in (check_asn lt rt err, SAsn(var, (rt, e')))
+        in
+        (* if it's a graph of temporary void type, 
+           give it its actual assigned type before checking *)
+        (match lt, rt, e' with
+         | Graph(ldt, lvt, lwt), Graph(rdt, rvt, rwt), SGraphExpr(nl, el) ->
+            let dt = if ldt != rdt && rdt = Void && nl = [] then ldt else check_asn ldt rdt err in
+            let vt = if lvt != rvt && rvt = Void && nl = [] then lvt else check_asn lvt rvt err in
+            let wt = if lwt != rwt && rwt = Void && el = [] then lwt else check_asn lwt rwt err in
+            let t = Graph(dt, vt, wt) in
+            (t, SAsn(var, (t, e')))
+         | _ ->
+            (check_asn lt rt err, SAsn(var, (rt, e'))))
       | Unop(op, e) as ex -> 
         let (t, e') = expr vars e in
         let ty = 
@@ -154,6 +165,50 @@ let check (globals, funcs) =
          in 
          let args' = List.map2 check_call fd.args args
          in (fd.typ, SFCall(fname, args'))
+      | GraphExpr(node_list, edge_list) ->
+         (* infer node label/data types from first node in list if any,
+            and check that all items have the same type *)
+         let node_label_typ, node_data_typ, s_node_list =
+           (match node_list with
+            | [] ->
+               (Void, Void, []) (* void type, for now *)
+            | (node_label, node_data) :: node_list' ->
+               let (lt, _) as node_label' = expr vars node_label in
+               let (dt, _) as node_data' = expr vars node_data in
+               let s_node_list =
+                 List.fold_left (fun ns (l, d) ->
+                                   let (lt', _) as l' = expr vars l in
+                                   let (dt', _) as d' = expr vars d in
+                                   if lt = lt' && dt = dt'
+                                   then (l', d') :: ns
+                                   else raise (Failure ("type mismatch in graph nodes")))
+                                [(node_label', node_data')]
+                                node_list' in
+               (lt, dt, List.rev s_node_list))
+         in
+         (* infer edge weight types from first edge in list if any,
+            and check that all items have the same type *)
+         let edge_typ, s_edge_list =
+           (match edge_list with
+            | [] ->
+               (Void, []) (* void type, for now *)
+            | (edge_src, edge_dst, edge_weight) :: edge_list' ->
+               let edge_src' = expr vars edge_src in
+               let edge_dst' = expr vars edge_dst in
+               let (wt, _) as edge_weight' = expr vars edge_weight in
+               let s_edge_list =
+                 List.fold_left (fun es (src, dst, w) ->
+                                   let src' = expr vars src in
+                                   let dst' = expr vars dst in
+                                   let (wt', _) as w' = expr vars w in
+                                   if wt = wt'
+                                   then (src', dst', w') :: es
+                                   else raise (Failure ("type mismatch in graph edges")))
+                                [(edge_src', edge_dst', edge_weight')]
+                                edge_list' in
+               (wt, List.rev s_edge_list))
+         in
+         (Graph(node_label_typ, node_data_typ, edge_typ), SGraphExpr(s_node_list, s_edge_list))
     in
 
     let check_bool_expr vars e = 

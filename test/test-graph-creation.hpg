@@ -1,0 +1,4 @@
+int main() {
+  graph <string:int, int> bar = ["a":2 <(5)> "b":3; "b" <(10)- "c":2];
+  return 0;
+}

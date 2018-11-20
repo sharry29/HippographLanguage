@@ -99,6 +99,13 @@ let rec string_of_expr = function
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" 
   | MCall(caller, f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | GraphExpr(node_list, edge_list) ->
+      let string_of_node_expr (l, d) = (string_of_expr l) ^ ": " ^ (string_of_expr d) in
+      let string_of_edge_expr (src, dst, w) =
+        "(" ^ (string_of_expr src) ^ ", " ^ (string_of_expr dst) ^ ", " ^ (string_of_expr w) ^ ")" in
+      "[" ^
+      "nodes: [" ^ String.concat ", " (List.map string_of_node_expr node_list) ^
+      "], edges: [" ^ String.concat ", " (List.map string_of_edge_expr edge_list) ^ "]]"
   | Noexpr -> ""
 
 let rec string_of_stmt = function
@@ -139,8 +146,3 @@ let string_of_fdecl fdecl =
 let string_of_program (vars, funcs) = 
   String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
   String.concat "\n" (List.map string_of_fdecl funcs)
-(* type stmt =
-  For of expr * expr * expr * stmt
-  ForNode of string * string * stmt
-  ForEdge of string * string * stmt
-  While of expr * stmt*)

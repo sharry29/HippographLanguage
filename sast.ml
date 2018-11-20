@@ -5,18 +5,21 @@ open Ast
 type sexpr = typ * sx
 and sx = 
 	  SIntlit of int
-	| SCharlit of char
-	| SStringlit of string
-	| SFloatlit of string
-	| SBoollit of bool
-	| SFunsig of typ * binding list * sexpr
-	| SVar of string
-	| SBinop of sexpr * binop * sexpr
-	| SUnop of unop * sexpr
-	| SAsn of string * sexpr
-	| SFCall of string * sexpr list
-	| SMCall of sexpr * string * sexpr list
-	| SNoexpr
+  | SCharlit of char
+  | SStringlit of string
+  | SFloatlit of string
+  | SBoollit of bool
+  | SFunsig of typ * binding list * sexpr
+  | SVar of string
+  | SBinop of sexpr * binop * sexpr
+  | SUnop of unop * sexpr
+  | SAsn of string * sexpr
+  | SFCall of string * sexpr list
+  | SMCall of sexpr * string * sexpr list
+  | SGraphExpr of node_list * edge_list
+  | SNoexpr
+and node_list = (sexpr * sexpr) list
+and edge_list = (sexpr * sexpr * sexpr) list
 
 type sstmt =
 	  SExpr of sexpr
@@ -41,7 +44,7 @@ type sfdecl = {
 type sprogram = binding list * sfdecl list
 
 let rec string_of_sexpr (t, e) = 
-  (*"(" ^ string_of_typ t ^ " : " ^*) (match e with
+  match e with
     SIntlit(l) -> string_of_int l
   | SBoollit(true) -> "true"
   | SBoollit(false) -> "false"
@@ -56,8 +59,14 @@ let rec string_of_sexpr (t, e) =
       f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   (* | SMCall(f, el, t) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")" *)
+  | SGraphExpr(node_list, edge_list) ->
+      let string_of_node_expr (l, d) = (string_of_sexpr l) ^ ": " ^ (string_of_sexpr d) in
+      let string_of_edge_expr (src, dst, w) =
+        "(" ^ (string_of_sexpr src) ^ ", " ^ (string_of_sexpr dst) ^ ", " ^ (string_of_sexpr w) ^ ")" in
+      "[" ^
+      "nodes: [" ^ String.concat ", " (List.map string_of_node_expr node_list) ^
+      "], edges: [" ^ String.concat ", " (List.map string_of_edge_expr edge_list) ^ "]]"
   | SNoexpr -> ""
-                ) ^ ")"
 
 let string_of_svdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
 
@@ -74,7 +83,12 @@ let rec string_of_sstmt = function
       "for (" ^ string_of_sexpr e1  ^ " ; " ^ string_of_sexpr e2 ^ " ; " ^
       string_of_sexpr e3  ^ ") " ^ string_of_sstmt s
   | SWhile(e, s) -> "while (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
-  | SVdecl(t, var, expr) -> string_of_svdecl (t, var)
+  | SVdecl(t, var, expr) -> 
+      match expr with
+      | (_, SNoexpr) ->
+          string_of_svdecl (t, var)
+      | _ ->
+          string_of_typ t ^ " " ^ string_of_sexpr expr ^ ";\n"
 
 let string_of_sfdecl fdecl = string_of_typ fdecl.styp ^ " " ^
   fdecl.sfname ^ "(" ^ String.concat ", " (List.map snd fdecl.sargs) ^
@@ -84,5 +98,7 @@ let string_of_sfdecl fdecl = string_of_typ fdecl.styp ^ " " ^
 
 
 let string_of_sprogram (vars, funcs) =
-  String.concat "" (List.map string_of_svdecl vars) ^ "\n" ^
+  (match vars with
+   | [] -> ""
+   | _ -> String.concat "" (List.map string_of_svdecl vars) ^ "\n") ^
   String.concat "\n" (List.map string_of_sfdecl funcs)
