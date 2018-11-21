@@ -27,6 +27,7 @@
 %left DOT
 %right ASSIGN
 %left AND OR
+%right COLON
 %nonassoc EQ NEQ 
 %nonassoc LEQ GEQ LT GT
 %left PLUS MINUS
@@ -82,8 +83,13 @@ typ:
 | STRINGTYPE { String }
 | FUNTYPE    { Fun }
 | GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
-| NODETYPE  LANGLE typ COLON typ RANGLE { Node($3, $5) }
-| EDGETYPE  LANGLE typ RANGLE { Edge($3) }
+| GRAPHTYPE LANGLE typ COMMA typ RANGLE            { Graph($3, Void, $5) }
+| GRAPHTYPE LANGLE typ COLON typ RANGLE            { Graph($3, $5, Void) }
+| GRAPHTYPE LANGLE typ RANGLE                      { Graph($3, Void, Void) }
+| NODETYPE  LANGLE typ COLON typ RANGLE            { Node($3, $5) }
+| NODETYPE  LANGLE typ RANGLE                      { Node($3, Void) }
+| EDGETYPE  LANGLE typ RANGLE                      { Edge($3) }
+| EDGETYPE                                         { Edge(Void) }
 
 stmt_list:
   { [] }
@@ -131,6 +137,7 @@ expr:
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }
 | expr DOT VARIABLE LPAREN actuals_opt RPAREN { MCall($1, $3, $5) }
+| expr COLON  expr      { NodeExpr($1, $3) }
 | LBRAK graph_item_opt RBRAK                  { match $2 with (node_list, edge_list) ->
                                                   GraphExpr(node_list, edge_list) }
 
@@ -145,12 +152,8 @@ graph_item_list:
 | graph_item_list SEQUENCE node_edge_list { merge_node_edge_lists $1 $3 }
 
 node_edge_list:
-  node_expr                                   { [$1], [] }
-| node_edge_list LUEDGE expr RUEDGE node_expr { update_node_edge_list_with_edge $1 $3 $5  }
-| node_edge_list LDEDGE expr RDEDGE node_expr { update_node_edge_list_with_edge $1 $3 $5  }
-| node_edge_list LUEDGE expr RDEDGE node_expr { update_node_edge_list_with_redge $1 $3 $5  }
-| node_edge_list LDEDGE expr RUEDGE node_expr { update_node_edge_list_with_ledge $1 $3 $5  }
-
-node_expr:
-| expr COLON expr { ($1, $3) }
-| expr            { ($1, Noexpr) }
+  expr                                   { [construct_node_expr $1], [] }
+| node_edge_list LUEDGE expr RUEDGE expr { update_node_edge_list_with_edge $1 $3 (construct_node_expr $5)  }
+| node_edge_list LDEDGE expr RDEDGE expr { update_node_edge_list_with_edge $1 $3 (construct_node_expr $5)  }
+| node_edge_list LUEDGE expr RDEDGE expr { update_node_edge_list_with_redge $1 $3 (construct_node_expr $5)  }
+| node_edge_list LDEDGE expr RUEDGE expr { update_node_edge_list_with_ledge $1 $3 (construct_node_expr $5)  }

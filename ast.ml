@@ -44,10 +44,12 @@ type expr =
   | Asn of string * expr
   | FCall of string * expr list
   | MCall of expr * string * expr list
+  | NodeExpr of expr * expr
+  | EdgeExpr of expr * expr * expr
   | GraphExpr of node_list * edge_list
   | Noexpr
-and node_list = (expr * expr) list
-and edge_list = (expr * expr * expr) list
+and node_list = expr list
+and edge_list = expr list
 
 type stmt = 
   | Expr of expr
@@ -65,6 +67,20 @@ type stmt =
 type fdecl = {typ: typ; fname:string; args:binding list; body:stmt list}
 
 type program = binding list * fdecl list
+
+exception Unsupported_constructor;;
+
+let unwrap_node_expr n_expr =
+  match n_expr with
+  | NodeExpr(label, data) -> (label, data)
+  | _ -> raise Unsupported_constructor
+;;
+
+let unwrap_edge_expr e_expr =
+  match e_expr with
+  | EdgeExpr(src, dst, w) -> (src, dst, w)
+  | _ -> raise Unsupported_constructor
+;;
 
 let string_of_op = function
     Add -> "+"
@@ -91,6 +107,7 @@ let rec string_of_expr = function
   | Boollit(false) -> "false"
   | Var(s) -> s
   | Stringlit(l) -> l
+  | Null -> "null"
   | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_uop o ^ string_of_expr e 
@@ -98,14 +115,12 @@ let rec string_of_expr = function
   | FCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" 
   | MCall(caller, f, el) ->
-      f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+      string_of_expr caller ^ f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | NodeExpr(e1, e2) -> string_of_expr e1 ^ ": " ^ string_of_expr e2
+  | EdgeExpr(src, dst, w) -> "(" ^ (string_of_expr src) ^ ", " ^ (string_of_expr dst) ^ ", " ^ (string_of_expr w) ^ ")"
   | GraphExpr(node_list, edge_list) ->
-      let string_of_node_expr (l, d) = (string_of_expr l) ^ ": " ^ (string_of_expr d) in
-      let string_of_edge_expr (src, dst, w) =
-        "(" ^ (string_of_expr src) ^ ", " ^ (string_of_expr dst) ^ ", " ^ (string_of_expr w) ^ ")" in
-      "[" ^
-      "nodes: [" ^ String.concat ", " (List.map string_of_node_expr node_list) ^
-      "], edges: [" ^ String.concat ", " (List.map string_of_edge_expr edge_list) ^ "]]"
+      "[nodes: [" ^ String.concat ", " (List.map string_of_expr node_list) ^
+      "], edges: [" ^ String.concat ", " (List.map string_of_expr edge_list) ^ "]]"
   | Noexpr -> ""
 
 let rec string_of_stmt = function
@@ -130,9 +145,9 @@ let rec string_of_typ = function
   | Fun    -> "fun"
   | String -> "string"
   | Void   -> "void"
-  | Graph(nm, nvl, evl) -> "graph<" ^ string_of_typ nm ^ ", " ^ string_of_typ nvl ^ ", " ^ string_of_typ evl ^ ">"
-  | Node(nm, vl)  -> "node<" ^ string_of_typ nm ^ ", " ^ string_of_typ vl ^ ">"
+  | Node(nl, nd)  -> "node<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ">"
   | Edge(vl)      -> "edge<" ^ string_of_typ vl ^ ">"
+  | Graph(nl, nd, ew) -> "graph<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ", " ^ string_of_typ ew ^ ">"
 
 let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
 

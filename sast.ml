@@ -10,16 +10,19 @@ and sx =
   | SFloatlit of string
   | SBoollit of bool
   | SFunsig of typ * binding list * sexpr
+  | SNull
   | SVar of string
   | SBinop of sexpr * binop * sexpr
   | SUnop of unop * sexpr
   | SAsn of string * sexpr
   | SFCall of string * sexpr list
   | SMCall of sexpr * string * sexpr list
+  | SNodeExpr of sexpr * sexpr
+  | SEdgeExpr of sexpr * sexpr * sexpr
   | SGraphExpr of node_list * edge_list
   | SNoexpr
-and node_list = (sexpr * sexpr) list
-and edge_list = (sexpr * sexpr * sexpr) list
+and node_list = sexpr list
+and edge_list = sexpr list
 
 type sstmt =
 	  SExpr of sexpr
@@ -43,7 +46,7 @@ type sfdecl = {
 
 type sprogram = binding list * sfdecl list
 
-let rec string_of_sexpr (t, e) = 
+let rec string_of_sexpr (_, e) =
   match e with
     SIntlit(l) -> string_of_int l
   | SBoollit(true) -> "true"
@@ -51,6 +54,7 @@ let rec string_of_sexpr (t, e) =
   | SFloatlit(l) -> l
   | SVar(s) -> s
   | SStringlit(l) -> l
+  | SNull -> "null"
   | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
   | SUnop(o, e) -> string_of_uop o ^ string_of_sexpr e 
@@ -59,13 +63,11 @@ let rec string_of_sexpr (t, e) =
       f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   (* | SMCall(f, el, t) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")" *)
+  | SNodeExpr(e1, e2) -> string_of_sexpr e1 ^ ": " ^ string_of_sexpr e2
+  | SEdgeExpr(src, dst, w) -> "(" ^ (string_of_sexpr src) ^ ", " ^ (string_of_sexpr dst) ^ ", " ^ (string_of_sexpr w) ^ ")"
   | SGraphExpr(node_list, edge_list) ->
-      let string_of_node_expr (l, d) = (string_of_sexpr l) ^ ": " ^ (string_of_sexpr d) in
-      let string_of_edge_expr (src, dst, w) =
-        "(" ^ (string_of_sexpr src) ^ ", " ^ (string_of_sexpr dst) ^ ", " ^ (string_of_sexpr w) ^ ")" in
-      "[" ^
-      "nodes: [" ^ String.concat ", " (List.map string_of_node_expr node_list) ^
-      "], edges: [" ^ String.concat ", " (List.map string_of_edge_expr edge_list) ^ "]]"
+      "[nodes: [" ^ String.concat ", " (List.map string_of_sexpr node_list) ^
+      "], edges: [" ^ String.concat ", " (List.map string_of_sexpr edge_list) ^ "]]"
   | SNoexpr -> ""
 
 let string_of_svdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
