@@ -98,124 +98,123 @@ let check (globals, funcs) =
         let (lt, _) as l' = expr vars l in
         let (dt, _) as d' = expr vars d in
         (Node(lt, dt), SNodeExpr(l', d'))
-      | Asn(var, e) as ex -> 
-        let lvt = type_of_variable vars var
-        and (rvt, e') = expr vars e in
-        let err = "illegal assignment " ^ string_of_typ lvt ^ " = " ^
-          string_of_typ rvt ^ " in " ^ string_of_expr ex
-        in
-        (match lvt, rvt, e' with
-         (* if it's a graph of temporary void type,
-            give it its actual assigned type before checking *)
-         | Graph(llt, ldt, lwt), Graph(rlt, rdt, rwt), SGraphExpr(nl, el) ->
-            let lt = if llt != rlt && rlt = Void && nl = [] then llt else check_asn llt rlt err in
-            let dt = if ldt != rdt && rdt = Void && nl = [] then ldt else check_asn ldt rdt err in
-            let wt = if lwt != rwt && rwt = Void && el = [] then lwt else check_asn lwt rwt err in
-            let t = Graph(lt, dt, wt) in
-            (t, SAsn(var, (t, e')))
-         | _ ->
-            (check_asn lvt rvt err, SAsn(var, (rvt, e'))))
-      | Unop(op, e) as ex -> 
-        let (t, e') = expr vars e in
-        let ty = 
-          match op with
-          | Not when t = Bool -> Bool
-          | Neg when t = Int -> Int
-          | _ -> raise (Failure ("illegal unary operator " ^ 
-                                 string_of_uop op ^ string_of_typ t ^
-                                 " in " ^ string_of_expr ex))
-        in (ty, SUnop(op, (t, e')))
-      | Binop(e1, op, e2) as e -> 
-          let (t1, e1') = expr vars e1 
-          and (t2, e2') = expr vars e2 in
-          (* All binary operators require operands of the same type *)
-          let same = t1 = t2 in
-          (* Determine expression type based on operator and operand types *)
-          let ty = match op with
-                   | Add | Sub | Mul | Div when same && t1 = Int -> Int
-                   | Add | Sub | Mul | Div when same && t1 = Float -> Float
-                   | Eq  | Neq when same -> Bool
-                   | Lt | Leq | Gt | Geq when same && (t1 = Int || t1 = Float) -> Bool
-                   | And | Or when same && t1 = Bool -> Bool
-                   | _ -> 
-                      raise (Failure ("illegal binary operator " ^
-                                       string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
-                                       string_of_typ t2 ^ " in " ^ string_of_expr e))
-          in (ty, SBinop((t1, e1'), op, (t2, e2')))
-      (* | MCall(e, mname, args) as mcall ->  
-      	  let fd = find_func mname in
-          let param_length = List.length fd.args in
-          if List.length args != param_length then
-            raise (Failure ("expecting " ^ string_of_int param_length ^ 
-                            " arguments in " ^ string_of_expr mcall))
-          else let check_call (ft, _) e = 
-            let (et, e') = expr e in 
-            let err = "illegal argument found " ^ string_of_typ et ^
-              " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e
-            in (check_asn ft et err, e')
-          in 
-          let args' = List.map2 check_call fd.args args
-          in (fd.typ, SMCall(expr e, mname, args')) *)
-      | FCall(fname, args) as fcall -> 
-         let fd = find_func fname in
-         let param_length = List.length fd.args in
-         if List.length args != param_length then
-           raise (Failure ("expecting " ^ string_of_int param_length ^ 
-                           " arguments in " ^ string_of_expr fcall))
-         else let check_call (ft, _) e = 
-           let (et, e') = expr vars e in 
-           let err = "illegal argument found " ^ string_of_typ et ^
-             " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e
-           in (check_asn ft et err, e')
-         in 
-         let args' = List.map2 check_call fd.args args
-         in (fd.typ, SFCall(fname, args'))
+      | EdgeExpr (src, dst, w)  ->
+        let (wt, _) as w' = expr vars w in
+        (Edge(wt), SEdgeExpr(expr vars src, expr vars dst, w'))
+      | Asn(var, e) -> 
+          check_asn_expr vars var e
+      | Unop(op, e) -> 
+          check_unop_expr vars op e
+      | Binop(e1, op, e2) -> 
+          check_binop_expr vars e1 op e2
+      | FCall(fname, args) ->
+         check_fcall_expr vars fname args
       | GraphExpr(node_list, edge_list) ->
-         (* infer node label/data types from first node in list if any,
-            and check that all items have the same type *)
-         let node_label_typ, node_data_typ, s_node_list =
-           (match node_list with
-            | [] ->
-               (Void, Void, []) (* void type, for now *)
-            | NodeExpr(node_label, node_data) :: node_list' ->
-               let (lt, _) as node_label' = expr vars node_label in
-               let (dt, _) as node_data' = expr vars node_data in
-               let s_node_list =
-                 List.fold_left (fun ns n ->
-                                   let l, d = unwrap_node_expr n in
-                                   let (lt', _) as l' = expr vars l in
-                                   let (dt', _) as d' = expr vars d in
-                                   if lt = lt' && dt = dt'
-                                   then (Node(lt, dt), SNodeExpr(l', d')) :: ns
-                                   else raise (Failure ("type mismatch in graph nodes")))
-                                [(Node(lt, dt), SNodeExpr(node_label', node_data'))]
-                                node_list' in
-               (lt, dt, List.rev s_node_list))
-         in
-         (* infer edge weight types from first edge in list if any,
-            and check that all items have the same type *)
-         let edge_typ, s_edge_list =
-           (match edge_list with
-            | [] ->
-               (Void, []) (* void type, for now *)
-            | EdgeExpr(edge_src, edge_dst, edge_weight) :: edge_list' ->
-               let edge_src' = expr vars edge_src in
-               let edge_dst' = expr vars edge_dst in
-               let (wt, _) as edge_weight' = expr vars edge_weight in
-               let s_edge_list =
-                 List.fold_left (fun es e ->
-                                   let src, dst, w = unwrap_edge_expr e in
-                                   let src' = expr vars src in
-                                   let dst' = expr vars dst in
-                                   let (wt', _) as w' = expr vars w in
-                                   if wt = wt'
-                                   then (Edge(wt), SEdgeExpr(src', dst', w')) :: es
-                                   else raise (Failure ("type mismatch in graph edges")))
-                                [(Edge(wt), SEdgeExpr(edge_src', edge_dst', edge_weight'))]
-                                edge_list' in
-               (wt, List.rev s_edge_list))
-         in
-         (Graph(node_label_typ, node_data_typ, edge_typ), SGraphExpr(s_node_list, s_edge_list))
+         check_graph_expr vars node_list edge_list
+
+    and check_asn_expr vars var e =
+      let lvt = type_of_variable vars var
+      and (rvt, e') = expr vars e in
+      let err = "illegal assignment " ^ string_of_typ lvt ^ " = " ^
+        string_of_typ rvt ^ " in " ^ string_of_expr (Asn(var, e))
+      in
+      (match lvt, rvt, e' with
+       (* if it's a graph of temporary void type, give it its actual assigned type before checking *)
+       | Graph(llt, ldt, lwt), Graph(rlt, rdt, rwt), SGraphExpr(nl, el) ->
+          let lt = if llt != rlt && rlt = Void && nl = [] then llt else check_asn llt rlt err in
+          let dt = if ldt != rdt && rdt = Void && nl = [] then ldt else check_asn ldt rdt err in
+          let wt = if lwt != rwt && rwt = Void && el = [] then lwt else check_asn lwt rwt err in
+          let t = Graph(lt, dt, wt) in
+          (t, SAsn(var, (t, e')))
+       | _ ->
+          (check_asn lvt rvt err, SAsn(var, (rvt, e'))))
+
+    and check_unop_expr vars op e =
+      let (t, e') = expr vars e in
+      let ty = 
+        match op with
+        | Not when t = Bool -> Bool
+        | Neg when t = Int -> Int
+        | _ -> raise (Failure ("illegal unary operator " ^ string_of_uop op ^ 
+                               string_of_typ t ^ " in " ^ string_of_expr (Unop(op, e))))
+      in (ty, SUnop(op, (t, e')))
+
+    and check_binop_expr vars e1 op e2 =
+      let (t1, e1') = expr vars e1 
+      and (t2, e2') = expr vars e2 in
+      (* All binary operators require operands of the same type *)
+      let same = t1 = t2 in
+      (* Determine expression type based on operator and operand types *)
+      let ty = match op with
+               | Add | Sub | Mul | Div when same && t1 = Int -> Int
+               | Add | Sub | Mul | Div when same && t1 = Float -> Float
+               | Eq  | Neq when same -> Bool
+               | Lt | Leq | Gt | Geq when same && (t1 = Int || t1 = Float) -> Bool
+               | And | Or when same && t1 = Bool -> Bool
+               | _ -> 
+                  raise (Failure ("illegal binary operator " ^
+                                   string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
+                                   string_of_typ t2 ^ " in " ^ string_of_expr (Binop(e1, op, e2))))
+      in (ty, SBinop((t1, e1'), op, (t2, e2')))
+
+    and check_fcall_expr vars fname args =
+      let fd = find_func fname in
+      let param_length = List.length fd.args in
+      if List.length args != param_length
+      then raise (Failure ("expecting " ^ string_of_int param_length ^
+                           " arguments in " ^ string_of_expr (FCall(fname, args))))
+      else let check_call (ft, _) e = 
+             let (et, e') = expr vars e in 
+             let err = "illegal argument found " ^ string_of_typ et ^
+                       " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e in
+             (check_asn ft et err, e')
+           in 
+           let args' = List.map2 check_call fd.args args in
+           (fd.typ, SFCall(fname, args'))
+
+    and check_graph_expr vars node_list edge_list =
+     (* infer node label/data types from first node in list if any,
+        and check that all items have the same type *)
+     let node_label_typ, node_data_typ, s_node_list =
+       (match node_list with
+        | [] ->
+           (Void, Void, []) (* void type, for now *)
+        | NodeExpr(node_label, node_data) :: _ ->
+           let lt, _ = expr vars node_label in
+           let dt, _ = expr vars node_data in
+           let map_node_expr n =
+             let l, d = unwrap_node_expr n in
+             let (lt', _) as l' = expr vars l in
+             let (dt', _) as d' = expr vars d in
+             if lt = lt' && dt = dt'
+             then (Node(lt, dt), SNodeExpr(l', d'))
+             else raise (Failure ("type mismatch in graph nodes"))
+           in
+           (lt, dt, List.map map_node_expr node_list)
+        | _ ->
+           raise Unsupported_constructor)
+     in
+     (* infer edge weight types from first edge in list if any,
+        and check that all items have the same type *)
+     let edge_typ, s_edge_list =
+       (match edge_list with
+        | [] ->
+           (Void, []) (* void type, for now *)
+        | EdgeExpr(_, _, edge_weight) :: _ ->
+           let wt, _ = expr vars edge_weight in
+           let map_edge_expr e =
+             let src, dst, w = unwrap_edge_expr e in
+             let src' = expr vars src in
+             let dst' = expr vars dst in
+             let (wt', _) as w' = expr vars w in
+             if wt = wt'
+             then (Edge(wt), SEdgeExpr(src', dst', w'))
+             else raise (Failure ("type mismatch in graph edges"))
+           in (wt, List.map map_edge_expr edge_list)
+        | _ ->
+           raise Unsupported_constructor)
+     in
+     (Graph(node_label_typ, node_data_typ, edge_typ), SGraphExpr(s_node_list, s_edge_list))
     in
 
     let check_bool_expr vars e = 
