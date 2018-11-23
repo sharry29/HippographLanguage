@@ -15,3 +15,4 @@ hippograph
 *.s
 *.log
 /*.out
+*.o

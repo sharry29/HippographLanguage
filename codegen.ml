@@ -12,7 +12,9 @@ let translate (globals, functions) =
   and i32_t  = L.i32_type  context
 	and i8_t 	= 	L.i8_type context
   and i1_t   = L.i1_type   context
-	and str_t	=	L.pointer_type (L.i8_type context) in
+	and str_t	=	L.pointer_type (L.i8_type context)
+  and void_ptr_t = L.pointer_type (L.i8_type context)
+  in
 
 
 	let ltype_of_typ = function
@@ -20,6 +22,7 @@ let translate (globals, functions) =
     | A.Int     -> i32_t
     | A.Bool  	-> i1_t
     | A.String 	-> str_t
+    | A.Node(_, _) -> void_ptr_t
   in
 
   (* Declare each global variable; remember its value in a map *)
@@ -29,10 +32,31 @@ let translate (globals, functions) =
       in StringMap.add n (L.define_global n init the_module) m in
     List.fold_left global_var StringMap.empty globals in
 
-	let print_t : L.lltype = 
-    	L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
-	let print_func : L.llvalue = 
-  	L.declare_function "printf" print_t the_module in
+  (* C Functions *)
+
+  let print_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
+  let print_func : L.llvalue = L.declare_function "printf" print_t the_module in
+
+  let create_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
+  let create_node_func : L.llvalue = L.declare_function "create_node" create_node_t the_module in
+
+  let set_node_label_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
+  let set_node_label_int_func : L.llvalue = L.declare_function "set_node_label_int" set_node_label_int_t the_module in
+
+  let set_node_label_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
+  let set_node_label_str_func : L.llvalue = L.declare_function "set_node_label_str" set_node_label_str_t the_module in
+
+  let set_node_label_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_node_label_void_func : L.llvalue = L.declare_function "set_node_label_void" set_node_label_void_t the_module in
+
+ let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
+  let set_node_data_int_func : L.llvalue = L.declare_function "set_node_data_int" set_node_data_int_t the_module in
+
+  let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
+  let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
+
+	let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+	let set_node_data_void_func : L.llvalue = L.declare_function "set_node_data_void" set_node_data_void_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -111,6 +135,23 @@ let translate (globals, functions) =
     | SAsn (s, e) ->
        let e' = expr vars builder e in
        ignore (L.build_store e' (lookup vars s) builder); e'
+    | SNodeExpr (l, d) ->
+       let l' = expr vars builder l in
+       let d' = expr vars builder d in
+       let n = L.build_call create_node_func [||] "create_node" builder in
+       (match l with
+        | (A.Int, _) -> ignore (L.build_call set_node_label_int_func [| n; l' |] "" builder)
+        | (A.String, _) -> ignore (L.build_call set_node_label_str_func [| n; l' |] "" builder)
+        | (A.Void, _) -> ignore (L.build_call set_node_label_void_func [| n; l' |] "" builder)
+        | _ -> () (* TODO *));
+       (match d with
+        | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_node_data_int_func [| n; d' |] "" builder)
+        | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_node_data_str_func [| n; d' |] "" builder)
+        | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder)
+        | _ -> () (* TODO *));
+       n
+    | SNull ->
+       L.const_null i32_t
     | SNoexpr ->
        L.undef (L.void_type context) (* placeholder *)
   	in 

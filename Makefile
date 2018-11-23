@@ -9,7 +9,7 @@ test : all testall.sh
 	./testall.sh
 
 .PHONY : all
-all : hippograph.native
+all : hippograph.native graph.o
 
 .PHONY: clean
 clean:

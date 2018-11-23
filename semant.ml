@@ -62,7 +62,7 @@ let check (globals, funcs) =
        the given lvalue type *)
     let check_asn lvaluet rvaluet err =
        if lvaluet = rvaluet then lvaluet else raise (Failure err)
-    in   
+    in
 
     (* Build global and local symbol table of variables for this function *)
 
@@ -118,16 +118,25 @@ let check (globals, funcs) =
       let err = "illegal assignment " ^ string_of_typ lvt ^ " = " ^
         string_of_typ rvt ^ " in " ^ string_of_expr (Asn(var, e))
       in
-      (match lvt, rvt, e' with
-       (* if it's a graph of temporary void type, give it its actual assigned type before checking *)
-       | Graph(llt, ldt, lwt), Graph(rlt, rdt, rwt), SGraphExpr(nl, el) ->
-          let lt = if llt != rlt && rlt = Void && nl = [] then llt else check_asn llt rlt err in
-          let dt = if ldt != rdt && rdt = Void && nl = [] then ldt else check_asn ldt rdt err in
-          let wt = if lwt != rwt && rwt = Void && el = [] then lwt else check_asn lwt rwt err in
-          let t = Graph(lt, dt, wt) in
-          (t, SAsn(var, (t, e')))
-       | _ ->
-          (check_asn lvt rvt err, SAsn(var, (rvt, e'))))
+
+      (* Reassign type of right expression if currently a null value of void type *)
+      let rvt = if (rvt, e') = (Void, SNull) then lvt else rvt in
+
+      match lvt, rvt, e' with
+      (* If left expression is a node with void type data, wrap right expression in a SNodeExpr *)
+      | Node(_), Node(_), _ ->
+         (check_asn lvt rvt err, SAsn(var, (rvt, e')))
+      | Node(nlt, Void), _, _ ->
+         (check_asn nlt rvt err, SAsn(var, (lvt, SNodeExpr((rvt, e'), (Void, SNull)))))
+      (* If right expression is an empty graph of void type, infer type from left expression *)
+      | Graph(llt, ldt, lwt), Graph(rlt, rdt, rwt), SGraphExpr(nl, el) ->
+         let lt = if llt != rlt && rlt = Void && nl = [] then llt else check_asn llt rlt err in
+         let dt = if ldt != rdt && rdt = Void && nl = [] then ldt else check_asn ldt rdt err in
+         let wt = if lwt != rwt && rwt = Void && el = [] then lwt else check_asn lwt rwt err in
+         let t = Graph(lt, dt, wt) in
+         (t, SAsn(var, (t, e')))
+      | _ ->
+         (check_asn lvt rvt err, SAsn(var, (rvt, e')))
 
     and check_unop_expr vars op e =
       let (t, e') = expr vars e in
