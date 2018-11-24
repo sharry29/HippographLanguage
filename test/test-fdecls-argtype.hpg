@@ -1,0 +1,15 @@
+int main() {
+  void_func1();
+  void_func2();
+  int v1 = int_func();
+  string v2 = str_func();
+  print_int(v1);
+  print(v2);
+  return 0;
+}
+
+void void_func1() {}
+void void_func2() { return; }
+
+int int_func() { return 42;}
+string str_func() { return "hello"; }

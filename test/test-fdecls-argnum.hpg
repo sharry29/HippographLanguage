@@ -1,13 +1,21 @@
 int main() {
+	print_int(41 + one());
 	print_int(addone(41));
-	print_int(add(120; 3));
+	print_int(add(40; 2));
 	return 0;
 }
 
+(* no args *)
+int one() {
+	return 1;
+}
+
+(* one arg *)
 int addone(int x) {
 	return x + 1;
 }
 
+(* multiple args *)
 int add(int x; int y) {
 	return x + y;
 }

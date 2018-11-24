@@ -256,8 +256,10 @@ let check (globals, funcs) =
       | Continue -> (vars, SContinue)
       (* TODO: End *)
       | Vdecl (ty, s, e) ->
-          let vars' = StringMap.add s ty vars in
-          (vars', SVdecl (ty, s, expr vars' e))
+        if ty = Void
+        then raise (Failure ("variable '" ^ s ^ "' declared void"))
+        else let vars' = StringMap.add s ty vars in
+             (vars', SVdecl (ty, s, expr vars' e))
       | Return e -> 
          let (t, e') = expr vars e in
          if t = func.typ then (vars, SReturn (t, e'))

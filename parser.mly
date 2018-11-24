@@ -106,7 +106,7 @@ stmt:
 | LBRACE stmt_list RBRACE                                  { Block(List.rev $2) }
 | typ VARIABLE SEQUENCE                                    { Vdecl($1, $2, Noexpr) }
 | typ VARIABLE ASSIGN expr SEQUENCE                        { Vdecl($1, $2, Asn($2, $4)) }
-| RETURN SEQUENCE                                          { Return Noexpr }
+| RETURN SEQUENCE                                          { Return Null }
 | RETURN expr SEQUENCE                                     { Return $2 }
 | BREAK SEQUENCE                                           { Break }
 | CONTINUE SEQUENCE                                        { Continue }

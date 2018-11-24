@@ -1,0 +1,6 @@
+int main() {
+  func("hello"; "world");
+  return 0;
+}
+
+void func(int foo; string bar) { }

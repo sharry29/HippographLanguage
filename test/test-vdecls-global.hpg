@@ -1,9 +1,14 @@
 int a;
 int b;
+string c;
+
 int main() {
   b = 40;
   a = b + 2;
+  string c = "foo";
   print_int(a);
+  print_int(b);
+  print(c);
+
   return 0;
 }
-
