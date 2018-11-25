@@ -10,12 +10,12 @@ let translate (globals, functions) =
 
 	let void_t 	= 	L.void_type context
   and i32_t  = L.i32_type  context
+  and i32_ptr_t  = L.pointer_type (L.i32_type context)
 	and i8_t 	= 	L.i8_type context
   and i1_t   = L.i1_type   context
 	and str_t	=	L.pointer_type (L.i8_type context)
   and void_ptr_t = L.pointer_type (L.i8_type context)
   in
-
 
 	let ltype_of_typ = function
     | A.Void    -> void_t
@@ -52,7 +52,7 @@ let translate (globals, functions) =
   let set_node_label_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
   let set_node_label_void_func : L.llvalue = L.declare_function "set_node_label_void" set_node_label_void_t the_module in
 
- let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
+  let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
   let set_node_data_int_func : L.llvalue = L.declare_function "set_node_data_int" set_node_data_int_t the_module in
 
   let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
@@ -60,6 +60,9 @@ let translate (globals, functions) =
 
 	let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
 	let set_node_data_void_func : L.llvalue = L.declare_function "set_node_data_void" set_node_data_void_t the_module in
+
+  let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -99,7 +102,7 @@ let translate (globals, functions) =
                         with Not_found -> StringMap.find n global_vars
     in
 
-    let rec expr vars builder ((_,e) : sexpr) = match e with
+    let rec expr vars builder ((ty,e) : sexpr) = match e with
     | SStringlit s -> L.build_global_stringptr s "str" builder
     | SIntlit i -> L.const_int i32_t i
     | SBoollit b -> L.const_int i1_t (if b then 1 else 0)
@@ -135,6 +138,12 @@ let translate (globals, functions) =
        let actuals = List.rev (List.map (expr vars builder) (List.rev act)) in
        let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
        L.build_call fdef (Array.of_list actuals) result builder
+    | SMCall (n, "get_data", []) ->
+       let n_ptr = expr vars builder n in
+       let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
+       (match ty with
+       | String -> ret
+       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
     | SAsn (s, e) ->
        let e' = expr vars builder e in
        ignore (L.build_store e' (lookup vars s) builder); e'

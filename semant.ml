@@ -20,16 +20,21 @@ let check (globals, funcs) =
   (**** Check global variables ****)
   check_binds "global" globals;
 
-  (**** Check functions ****)
-  (* Collect function declarations for built-in functions: no bodies *)
-  let built_in_decls = 
-    let add_bind map (name, ty) = StringMap.add name {
-      typ = Void;
-      fname = name; 
-      args = [(ty, "x")];
-      body = [] } map
-    in List.fold_left add_bind StringMap.empty [ ("print_int", Int); ("print_bool", Bool); ("print", String) ]
+  (**** Check functions and methods ****)
+
+  let built_in_fdecls =
+    let add_bind map (name, (ty, args)) = 
+      StringMap.add name
+                    { typ = ty; fname = name; args = args; body = [] }
+                    map in
+    let mappings = [
+      "print_int", (Void, [(Int, "x")]);
+      "print_bool", (Void, [(Bool, "x")]);
+      "print", (Void, [(String, "x")])
+    ] in
+    List.fold_left add_bind StringMap.empty mappings
   in
+
   (* Add function name to symbol table *)
   let add_func map fd = 
     let built_in_err = "function " ^ fd.fname ^ " may not be defined"
@@ -37,19 +42,38 @@ let check (globals, funcs) =
     and make_err er = raise (Failure er)
     and n = fd.fname (* Name of the function *)
     in match fd with (* No duplicate functions or redefinitions of built-ins *)
-         _ when StringMap.mem n built_in_decls -> make_err built_in_err
+         _ when StringMap.mem n built_in_fdecls -> make_err built_in_err
        | _ when StringMap.mem n map -> make_err dup_err  
-       | _ ->  StringMap.add n fd map 
+       | _ ->  StringMap.add n fd map
   in
 
   (* Collect all function names into one symbol table *)
-  let fdecls = List.fold_left add_func built_in_decls funcs
+  let fdecls = List.fold_left add_func built_in_fdecls funcs
   in
   
   (* Return a function from our symbol table *)
   let find_func s = 
     try StringMap.find s fdecls
     with Not_found -> raise (Failure ("unrecognized function " ^ s))
+  in
+
+  (* Return a method from our symbol table *)
+  let find_method libtyp s =
+    try match libtyp with
+        | Node(lt, dt) ->
+           (match s with
+            | "get_data" ->
+               if dt = Void
+               then raise (Failure ("node data type is void"))
+               else { typ = dt; fname = s; args = []; body = [] }
+            | "data" ->
+               if dt = Void
+               then raise (Failure ("node data type is void"))
+               else { typ = Void; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
+            | _ ->
+               raise Not_found)
+        | _ -> raise Not_found
+    with Not_found -> raise (Failure ("unrecognized method " ^ string_of_typ libtyp ^ "." ^ s))
   in
 
   let _ = find_func "main" in (*Ensure "main" is defined*)
@@ -109,6 +133,8 @@ let check (globals, funcs) =
           check_binop_expr vars e1 op e2
       | FCall(fname, args) ->
          check_fcall_expr vars fname args
+      | MCall(instance, mname, args) ->
+         check_mcall_expr vars instance mname args
       | GraphExpr(node_list, edge_list) ->
          check_graph_expr vars node_list edge_list
 
@@ -118,9 +144,6 @@ let check (globals, funcs) =
       let err = "illegal assignment " ^ string_of_typ lvt ^ " = " ^
         string_of_typ rvt ^ " in " ^ string_of_expr (Asn(var, e))
       in
-
-      (* Reassign type of right expression if currently a null value of void type *)
-      let rvt = if (rvt, e') = (Void, SNull) then lvt else rvt in
 
       match lvt, rvt, e' with
       (* If left expression is a node with void type data, wrap right expression in a SNodeExpr *)
@@ -180,6 +203,22 @@ let check (globals, funcs) =
            in 
            let args' = List.map2 check_call fd.args args in
            (fd.typ, SFCall(fname, args'))
+
+    and check_mcall_expr vars instance mname args =
+      let (instance_typ, _) as instance' = expr vars instance in
+      let md = find_method instance_typ mname in
+      let param_length = List.length md.args in
+      if List.length args != param_length
+      then raise (Failure ("expecting " ^ string_of_int param_length ^
+                           " arguments in " ^ string_of_expr (MCall(instance, mname, args))))
+      else let check_call (ft, _) e =
+             let (et, e') = expr vars e in
+             let err = "illegal argument found " ^ string_of_typ et ^
+                       " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e in
+             (check_asn ft et err, e')
+           in
+           let args' = List.map2 check_call md.args args in
+           (md.typ, SMCall(instance', mname, args'))
 
     and check_graph_expr vars node_list edge_list =
      (* infer node label/data types from first node in list if any,

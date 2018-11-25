@@ -115,7 +115,7 @@ let rec string_of_expr = function
   | FCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" 
   | MCall(caller, f, el) ->
-      string_of_expr caller ^ f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+      string_of_expr caller ^ "." ^ f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | NodeExpr(e1, e2) -> string_of_expr e1 ^ ": " ^ string_of_expr e2
   | EdgeExpr(src, dst, w) -> "(" ^ (string_of_expr src) ^ ", " ^ (string_of_expr dst) ^ ", " ^ (string_of_expr w) ^ ")"
   | GraphExpr(node_list, edge_list) ->

@@ -1,0 +1,7 @@
+int main() {
+  node<string:void> n1 = "abc":NULL;
+
+  print(n1.get_data());
+
+  return 0;
+}

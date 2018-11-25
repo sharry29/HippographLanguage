@@ -61,8 +61,8 @@ let rec string_of_sexpr (_, e) =
   | SAsn(v, e) -> v ^ " = " ^ string_of_sexpr e
   | SFCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
-  (* | SMCall(f, el, t) ->
-      f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")" *)
+  | SMCall(caller, f, el) ->
+      string_of_sexpr caller ^ "." ^ f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SNodeExpr(e1, e2) -> string_of_sexpr e1 ^ ": " ^ string_of_sexpr e2
   | SEdgeExpr(src, dst, w) -> "(" ^ (string_of_sexpr src) ^ ", " ^ (string_of_sexpr dst) ^ ", " ^ (string_of_sexpr w) ^ ")"
   | SGraphExpr(node_list, edge_list) ->
