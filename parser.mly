@@ -29,7 +29,7 @@
 %left AND OR
 %right COLON
 %nonassoc EQ NEQ 
-%nonassoc LEQ GEQ LT GT
+%nonassoc LEQ GEQ LANGLE RANGLE
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right NEG NOT
@@ -130,8 +130,8 @@ expr:
 | expr NEQ expr         { Binop($1, Neq, $3) }
 | expr LEQ expr         { Binop($1, Leq, $3) }
 | expr GEQ expr         { Binop($1, Geq, $3) }
-| expr LT expr          { Binop($1, Lt, $3) }
-| expr GT expr          { Binop($1, Gt, $3) }
+| expr LANGLE expr          { Binop($1, Lt, $3) }
+| expr RANGLE expr          { Binop($1, Gt, $3) }
 | MINUS expr %prec NEG  { Unop(Neg, $2) }
 | NOT expr              { Unop(Not, $2) }
 | VARIABLE ASSIGN expr  { Asn($1, $3) }
