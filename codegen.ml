@@ -205,6 +205,25 @@ let translate (globals, functions) =
 
         ignore (L.build_cond_br bool_val then_bb else_bb builder);
         (vars, L.builder_at_end context merge_bb)
+
+      | SWhile (p, body) ->
+        let p_bb = L.append_block context "while" the_function in
+        ignore (L.build_br p_bb builder);
+
+        let body_bb = L.append_block context "while_body" the_function in
+        let _, builder' = stmt (vars, L.builder_at_end context body_bb) body in
+        add_terminal builder' (L.build_br p_bb);
+
+        let p_builder = L.builder_at_end context p_bb in
+        let bool_val = expr vars p_builder p in
+
+        let merge_bb = L.append_block context "merge" the_function in
+        ignore (L.build_cond_br bool_val body_bb merge_bb p_builder);
+        (vars, L.builder_at_end context merge_bb)
+
+
+        | SFor (e1, p, e2, body) -> stmt (vars, builder)
+         (SBlock [SExpr e1 ; SWhile (p, SBlock [body ; SExpr e2]) ] )
     in
 
     let (_, builder) = stmt (local_vars, builder) (SBlock sfdecl.sbody) in
