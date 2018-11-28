@@ -1,0 +1,8 @@
+int main() {
+  print_bool(5 == 4 + 1);
+  print_bool(4 + 1 == 5);
+  print_bool(2 * 4 + 1 == 9);
+  print_bool(1 + 2 * 4 == 9);
+  print_bool(2 * (4 + 1) == 10);
+  print_bool((2 * (4 + 1) + 2) * 3 == 18 * 2);
+}

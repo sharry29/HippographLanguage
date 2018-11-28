@@ -120,6 +120,7 @@ expr:
 | typ LPAREN args_opt RPAREN LPAREN expr RPAREN { Funsig($1, $3, $6) }
 | NULL                  { Null }
 | VARIABLE              { Var($1) }
+| LPAREN expr RPAREN    { $2 }
 | expr PLUS   expr      { Binop($1, Add, $3) }
 | expr MINUS  expr      { Binop($1, Sub, $3) }
 | expr TIMES  expr      { Binop($1, Mul, $3) }

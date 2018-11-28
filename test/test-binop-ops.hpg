@@ -1,0 +1,23 @@
+int main() {
+  print_bool(4 < 5);
+  print_bool(5 < 5);
+  print_bool(6 < 5);
+  
+  print_bool(4 <= 5);
+  print_bool(5 <= 5);
+  print_bool(6 <= 5);
+  
+  print_bool(4 == 5);
+  print_bool(5 == 5);
+  print_bool(6 == 5);
+
+  print_bool(4 >= 5);
+  print_bool(5 >= 5);
+  print_bool(6 >= 5);
+
+  print_bool(4 > 5);
+  print_bool(5 > 5);
+  print_bool(6 > 5);
+
+  return 0;
+}
