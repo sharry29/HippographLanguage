@@ -80,6 +80,9 @@ let translate (globals, functions) =
   let set_edge_w_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
   let set_edge_w_str_func : L.llvalue = L.declare_function "set_edge_w_str" set_edge_w_str_t the_module in
 
+  let set_edge_w_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_edge_w_void_func : L.llvalue = L.declare_function "set_edge_w_void" set_edge_w_void_t the_module in
+
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
       let name = sfdecl.sfname
@@ -177,7 +180,7 @@ let translate (globals, functions) =
        (match w with
         | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_int_func [| n; w' |] "" builder)
         | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_str_func [| n; w' |] "" builder)
-       (* | (A.Void, _) -> ignore (L.build_call set_edge_weight_void_func [| n; w' |] "" builder)*)
+        | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_void_func [| n; w' |] "" builder)
         | _ -> ());
        n
     | SNodeExpr (l, d) ->
