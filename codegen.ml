@@ -68,14 +68,14 @@ let translate (globals, functions) =
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
 
-  let set_edge_src_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
-  let set_edge_src_func : L.llvalue = L.declare_function "set_edge_src" set_edge_src_t the_module in
+  let set_edge_src_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_edge_src_int_func : L.llvalue = L.declare_function "set_edge_src_int" set_edge_src_int_t the_module in
 
-  let set_edge_dest_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
-  let set_edge_dest_func : L.llvalue = L.declare_function "set_edge_dest" set_edge_dest_t the_module in
+  let set_edge_dest_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_edge_dest_int_func : L.llvalue = L.declare_function "set_edge_dest_int" set_edge_dest_int_t the_module in
 
-  let set_edge_weight_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
-  let set_edge_weight_int_func: L.llvalue = L.declare_function "set_edge_weight_int" set_edge_weight_int_t the_module in
+  let set_edge_w_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
+  let set_edge_w_int_func: L.llvalue = L.declare_function "set_edge_w_int" set_edge_w_int_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -166,13 +166,13 @@ let translate (globals, functions) =
        let w' = expr vars builder w in
        let n = L.build_call create_edge_func [||] "create_edge" builder in
        (match s with
-        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_src_func [| n; s' |] "" builder)
+        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_src_int_func [| n; s' |] "" builder)
         | _ -> ());
        (match d with
-        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_dest_func [| n; d' |] "" builder)
+        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_dest_int_func [| n; d' |] "" builder)
         | _ -> ());
        (match w with
-        | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_edge_weight_int_func [| n; w' |] "" builder)
+        | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_int_func [| n; w' |] "" builder)
         (*| (A.String, _) -> ignore (L.build_call set_edge_weight_str_func [| n; w' |] "" builder)
         | (A.Void, _) -> ignore (L.build_call set_edge_weight_void_func [| n; w' |] "" builder)*)
         | _ -> ());

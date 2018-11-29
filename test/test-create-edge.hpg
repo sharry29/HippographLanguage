@@ -1,6 +1,4 @@
 int main() {
-  node<string:string> n1 = "abc":"def";
-  node<string> n2 = "ghi";
-  edge<int> e1 = n1 -(1)- n2;
+  edge<int> e1 = 1 -(1)- 2;
   return 0;
 }
