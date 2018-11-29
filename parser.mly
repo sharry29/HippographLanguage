@@ -139,6 +139,7 @@ expr:
 | VARIABLE LPAREN actuals_opt RPAREN { FCall($1, $3) }
 | expr DOT VARIABLE LPAREN actuals_opt RPAREN { MCall($1, $3, $5) }
 | expr COLON  expr      { NodeExpr($1, $3) }
+| expr LUEDGE expr RUEDGE expr { EdgeExpr($1, $5, $3) }
 | LBRAK graph_item_opt RBRAK                  { match $2 with (node_list, edge_list) ->
                                                   GraphExpr(node_list, edge_list) }
 

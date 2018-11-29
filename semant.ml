@@ -60,6 +60,14 @@ let check (globals, funcs) =
   (* Return a method from our symbol table *)
   let find_method libtyp s =
     try match libtyp with
+        | Edge(wt) ->
+            (match s with
+            | "weight" ->
+              if wt = Void
+              then raise (Failure ("edge " ^ s ^ " has no weight"))
+              else { typ = wt; fname = s; args = []; body = [] }
+            | _ ->
+              raise Not_found)
         | Node(lt, dt) ->
            (match s with
             | "get_data" ->

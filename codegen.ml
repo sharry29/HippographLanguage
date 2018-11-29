@@ -23,6 +23,7 @@ let translate (globals, functions) =
     | A.Bool  	-> i1_t
     | A.String 	-> str_t
     | A.Node(_, _) -> void_ptr_t
+    | A.Edge(_) -> void_ptr_t
   in
 
   (* Declare each global variable; remember its value in a map *)
@@ -43,6 +44,9 @@ let translate (globals, functions) =
   let create_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
   let create_node_func : L.llvalue = L.declare_function "create_node" create_node_t the_module in
 
+  let create_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
+  let create_edge_func : L.llvalue = L.declare_function "create_edge" create_edge_t the_module in
+
   let set_node_label_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
   let set_node_label_int_func : L.llvalue = L.declare_function "set_node_label_int" set_node_label_int_t the_module in
 
@@ -58,11 +62,20 @@ let translate (globals, functions) =
   let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
   let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
 
-	let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
-	let set_node_data_void_func : L.llvalue = L.declare_function "set_node_data_void" set_node_data_void_t the_module in
+  let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_node_data_void_func : L.llvalue = L.declare_function "set_node_data_void" set_node_data_void_t the_module in
 
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
+
+  let set_edge_src_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_edge_src_func : L.llvalue = L.declare_function "set_edge_src" set_edge_src_t the_module in
+
+  let set_edge_dest_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_edge_dest_func : L.llvalue = L.declare_function "set_edge_dest" set_edge_dest_t the_module in
+
+  let set_edge_weight_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
+  let set_edge_weight_int_func: L.llvalue = L.declare_function "set_edge_weight_int" set_edge_weight_int_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -147,6 +160,23 @@ let translate (globals, functions) =
     | SAsn (s, e) ->
        let e' = expr vars builder e in
        ignore (L.build_store e' (lookup vars s) builder); e'
+    | SEdgeExpr(s, d, w) ->
+       let s' = expr vars builder s in
+       let d' = expr vars builder d in
+       let w' = expr vars builder w in
+       let n = L.build_call create_edge_func [||] "create_edge" builder in
+       (match s with
+        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_src_func [| n; s' |] "" builder)
+        | _ -> ());
+       (match d with
+        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_dest_func [| n; d' |] "" builder)
+        | _ -> ());
+       (match w with
+        | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_edge_weight_int_func [| n; w' |] "" builder)
+        (*| (A.String, _) -> ignore (L.build_call set_edge_weight_str_func [| n; w' |] "" builder)
+        | (A.Void, _) -> ignore (L.build_call set_edge_weight_void_func [| n; w' |] "" builder)*)
+        | _ -> ());
+       n
     | SNodeExpr (l, d) ->
        let l' = expr vars builder l in
        let d' = expr vars builder d in
