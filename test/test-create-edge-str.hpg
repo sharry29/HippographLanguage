@@ -1,0 +1,4 @@
+int main() {
+  edge<string> e1 = 1 -("abc")- 2;
+  return 0;
+}
