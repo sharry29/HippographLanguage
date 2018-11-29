@@ -1,0 +1,6 @@
+int main() {
+  edge<int> e1 = 1 -(1)- 2;
+  int n = e1.weight();
+  print_int(n);
+  return 0;
+}

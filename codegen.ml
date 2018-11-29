@@ -83,6 +83,9 @@ let translate (globals, functions) =
   let set_edge_w_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
   let set_edge_w_void_func : L.llvalue = L.declare_function "set_edge_w_void" set_edge_w_void_t the_module in
 
+  let get_edge_w_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_edge_w_func : L.llvalue = L.declare_function "get_edge_w" get_edge_w_t the_module in
+
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
       let name = sfdecl.sfname
@@ -162,7 +165,13 @@ let translate (globals, functions) =
        let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
        (match ty with
        | String -> ret
-       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
+    | SMCall (n, "weight", []) ->
+       let n_ptr = expr vars builder n in
+       let ret = L.build_call get_edge_w_func [| n_ptr |] "tmp_data" builder in
+       (match ty with
+       | String -> ret
+       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
     | SAsn (s, e) ->
        let e' = expr vars builder e in
        ignore (L.build_store e' (lookup vars s) builder); e'
