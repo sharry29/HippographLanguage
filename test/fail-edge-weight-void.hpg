@@ -1,0 +1,5 @@
+int main() {
+  edge<void> e1 = 1 -(NULL)- 2;
+  e1.weight();
+  return 0;
+}

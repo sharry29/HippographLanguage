@@ -64,7 +64,7 @@ let check (globals, funcs) =
             (match s with
             | "weight" ->
               if wt = Void
-              then raise (Failure ("edge " ^ s ^ " has no weight"))
+              then raise (Failure ("edge " ^ s ^ " cannot be applied to void weights"))
               else { typ = wt; fname = s; args = []; body = [] }
             | _ ->
               raise Not_found)

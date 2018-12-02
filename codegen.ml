@@ -171,7 +171,8 @@ let translate (globals, functions) =
        let ret = L.build_call get_edge_w_func [| n_ptr |] "tmp_data" builder in
        (match ty with
        | String -> ret
-       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
+       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+       | Void -> L.build_load (L.build_bitcast ret void_ptr_t "bitcast" builder) "deref" builder);
     | SAsn (s, e) ->
        let e' = expr vars builder e in
        ignore (L.build_store e' (lookup vars s) builder); e'
