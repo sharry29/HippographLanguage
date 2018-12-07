@@ -40,6 +40,7 @@ struct node {
   int label_typ;
   primitive *data;
   int data_typ;
+  bool has_val;
   neighbor_list *neighbor_list;
   node *next;
 };
@@ -96,6 +97,7 @@ void *create_node() {
   node *n = (node *) malloc(sizeof(node));
   n -> label = NULL;
   n -> data = NULL;
+  n -> has_val = false;
   n -> neighbor_list = create_neighbor_list();
   n -> neighbor_list -> hd = NULL;
   n -> next = NULL;
@@ -132,6 +134,7 @@ void set_node_data_int(node *n, int i) {
   }
   n -> data = create_prim_int(i);
   n -> data_typ = INTTYPE;
+  n -> has_val = true;
 }
 
 void set_node_data_str(node *n, char *s) {
@@ -140,6 +143,7 @@ void set_node_data_str(node *n, char *s) {
   }
   n -> data = create_prim_str(s);
   n -> data_typ = STRTYPE;
+  n -> has_val = true;
 }
 
 void set_node_data_void(node *n, void *v) {
@@ -165,10 +169,12 @@ void *get_node_label(node *n) {
 }
 
 void *get_node_data(node *n) {
+
   int typ = n -> data_typ;
   void *data = NULL;
 
-  if (typ == INTTYPE) {
+  if (n -> has_val == false) { 
+  } else if (typ == INTTYPE) {
     data = (void *) &(n -> data -> i);
   } else if (typ == STRTYPE) {
     data = (void *) n -> data -> s;
