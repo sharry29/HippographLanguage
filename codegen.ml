@@ -24,6 +24,7 @@ let translate (globals, functions) =
     | A.String 	-> str_t
     | A.Node(_, _) -> void_ptr_t
     | A.Edge(_) -> void_ptr_t
+    | A.Graph(_,_,_) -> void_ptr_t
   in
 
   (* Declare each global variable; remember its value in a map *)
@@ -40,6 +41,15 @@ let translate (globals, functions) =
 
   let print_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let print_func : L.llvalue = L.declare_function "printf" print_t the_module in
+
+  let create_graph_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
+  let create_graph_func : L.llvalue = L.declare_function "create_graph" create_graph_t the_module in
+
+  let add_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t |] in
+  let add_node_func : L.llvalue = L.declare_function "add_node" add_node_t the_module in
+
+  let add_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t |] in
+  let add_edge_func : L.llvalue = L.declare_function "add_edge" add_edge_t the_module in
 
   let create_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
   let create_node_func : L.llvalue = L.declare_function "create_node" create_node_t the_module in
@@ -123,97 +133,121 @@ let translate (globals, functions) =
     let lookup vars n = try StringMap.find n vars
                         with Not_found -> StringMap.find n global_vars
     in
+    
+    let rec graph_add_node n nlist = 
+      match nlist with
+       | [] -> n
+       | _ -> let new_g = L.build_call add_node_func [| n; List.hd nlist |] "add_node" builder in
+              graph_add_node new_g (List.tl nlist)
+    in
+
+    let rec graph_add_edge n elist = 
+      match elist with
+       | [] -> n
+       | _ -> let new_g = L.build_call add_edge_func [| n; List.hd elist |] "add_edge" builder in
+              graph_add_edge new_g (List.tl elist)
+    in
 
     let rec expr vars builder ((ty,e) : sexpr) = match e with
-    | SStringlit s -> L.build_global_stringptr s "str" builder
-    | SIntlit i -> L.const_int i32_t i
-    | SBoollit b -> L.const_int i1_t (if b then 1 else 0)
-    | SVar s -> L.build_load (lookup vars s) s builder
-    | SUnop(op, e) ->
-        let e' = expr vars builder e in
-        (match op with
-          A.Neg     -> L.build_neg
-        | A.Not     -> L.build_not) e' "tmp" builder
-    | SBinop (e1, op, e2) ->
-        let e1' = expr vars builder e1
-        and e2' = expr vars builder e2 in
-        (match op with
-          A.Add     -> L.build_add
-        | A.Sub     -> L.build_sub
-        | A.Mul     -> L.build_mul
-        | A.Div     -> L.build_sdiv
-        | A.And     -> L.build_and
-        | A.Or      -> L.build_or
-        | A.Eq      -> L.build_icmp L.Icmp.Eq
-        | A.Neq     -> L.build_icmp L.Icmp.Ne
-        | A.Lt      -> L.build_icmp L.Icmp.Slt
-        | A.Leq     -> L.build_icmp L.Icmp.Sle
-        | A.Gt      -> L.build_icmp L.Icmp.Sgt
-        | A.Geq     -> L.build_icmp L.Icmp.Sge
-        ) e1' e2' "tmp" builder
-    | SFCall ("print", [e]) ->
-       L.build_call print_func [| str_format_str ; ( expr vars builder e ) |] "" builder
-    | SFCall ("print_int", [e]) | SFCall ("print_bool", [e]) ->
-  		 L.build_call print_func [| int_format_str ; ( expr vars builder e ) |] "" builder
-    | SFCall (f, act) ->
-       let (fdef, sfdecl) = StringMap.find f function_decls in
-       let actuals = List.rev (List.map (expr vars builder) (List.rev act)) in
-       let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
-       L.build_call fdef (Array.of_list actuals) result builder
-    | SMCall (n, "get_data", []) ->
-       let n_ptr = expr vars builder n in
-       let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
-       (match ty with
-       | String -> ret
-       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
-    | SMCall (n, "weight", []) ->
-       let n_ptr = expr vars builder n in
-       let ret = L.build_call get_edge_w_func [| n_ptr |] "tmp_data" builder in
-       (match ty with
-       | String -> ret
-       | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
-       | Void -> L.build_load (L.build_bitcast ret void_ptr_t "bitcast" builder) "deref" builder);
-    | SAsn (s, e) ->
-       let e' = expr vars builder e in
-       ignore (L.build_store e' (lookup vars s) builder); e'
-    | SEdgeExpr(s, d, w) ->
-       let s' = expr vars builder s in
-       let d' = expr vars builder d in
-       let w' = expr vars builder w in
-       let n = L.build_call create_edge_func [||] "create_edge" builder in
-       (match s with
-        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_src_int_func [| n; s' |] "" builder)
-        | _ -> ());
-       (match d with
-        | (A.Node(_,_), _) -> ignore (L.build_call set_edge_dest_int_func [| n; d' |] "" builder)
-        | _ -> ());
-       (match w with
-        | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_int_func [| n; w' |] "" builder)
-        | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_str_func [| n; w' |] "" builder)
-        | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_void_func [| n; w' |] "" builder)
-        | _ -> ());
-       n
-    | SNodeExpr (l, d) ->
-       let l' = expr vars builder l in
-       let d' = expr vars builder d in
-       let n = L.build_call create_node_func [||] "create_node" builder in
-       (match l with
-        | (A.Int, _) -> ignore (L.build_call set_node_label_int_func [| n; l' |] "" builder)
-        | (A.String, _) -> ignore (L.build_call set_node_label_str_func [| n; l' |] "" builder)
-        | (A.Void, _) -> ignore (L.build_call set_node_label_void_func [| n; l' |] "" builder)
-        | _ -> () (* TODO *));
-       (match d with
-        | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_node_data_int_func [| n; d' |] "" builder)
-        | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_node_data_str_func [| n; d' |] "" builder)
-        | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder)
-        | _ -> () (* TODO *));
-       n
-    | SNull ->
-       L.const_null i32_t
-    | SNoexpr ->
-       L.undef (L.void_type context) (* placeholder *)
-  	in 
-
+      | SStringlit s -> L.build_global_stringptr s "str" builder
+      | SIntlit i -> L.const_int i32_t i
+      | SBoollit b -> L.const_int i1_t (if b then 1 else 0)
+      | SVar s -> L.build_load (lookup vars s) s builder
+      | SUnop(op, e) ->
+          let e' = expr vars builder e in
+          (match op with
+            A.Neg     -> L.build_neg
+          | A.Not     -> L.build_not) e' "tmp" builder
+      | SBinop (e1, op, e2) ->
+          let e1' = expr vars builder e1
+          and e2' = expr vars builder e2 in
+          (match op with
+            A.Add     -> L.build_add
+          | A.Sub     -> L.build_sub
+          | A.Mul     -> L.build_mul
+          | A.Div     -> L.build_sdiv
+          | A.And     -> L.build_and
+          | A.Or      -> L.build_or
+          | A.Eq      -> L.build_icmp L.Icmp.Eq
+          | A.Neq     -> L.build_icmp L.Icmp.Ne
+          | A.Lt      -> L.build_icmp L.Icmp.Slt
+          | A.Leq     -> L.build_icmp L.Icmp.Sle
+          | A.Gt      -> L.build_icmp L.Icmp.Sgt
+          | A.Geq     -> L.build_icmp L.Icmp.Sge
+          ) e1' e2' "tmp" builder
+      | SFCall ("print", [e]) ->
+         L.build_call print_func [| str_format_str ; ( expr vars builder e ) |] "" builder
+      | SFCall ("print_int", [e]) | SFCall ("print_bool", [e]) ->
+         L.build_call print_func [| int_format_str ; ( expr vars builder e ) |] "" builder
+      | SFCall (f, act) ->
+         let (fdef, sfdecl) = StringMap.find f function_decls in
+         let actuals = List.rev (List.map (expr vars builder) (List.rev act)) in
+         let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
+         L.build_call fdef (Array.of_list actuals) result builder
+      | SMCall (n, "get_data", []) ->
+         let n_ptr = expr vars builder n in
+         let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
+         (match ty with
+         | String -> ret
+         | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
+      | SMCall (n, "weight", []) ->
+         let n_ptr = expr vars builder n in
+         let ret = L.build_call get_edge_w_func [| n_ptr |] "tmp_data" builder in
+         (match ty with
+         | String -> ret
+         | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+         | Void -> L.build_load (L.build_bitcast ret void_ptr_t "bitcast" builder) "deref" builder);
+      | SAsn (s, e) ->
+         let e' = expr vars builder e in
+         ignore (L.build_store e' (lookup vars s) builder); e'
+      | SGraphExpr(nlist, elist) ->
+         let nlist' = list_converter vars nlist in
+         let elist' = list_converter vars elist in
+         let n = L.build_call create_graph_func [||] "create_graph" builder in
+         let n' = graph_add_node n nlist' in
+        graph_add_edge n' elist'     
+      | SEdgeExpr(s, d, w) ->
+         let s' = expr vars builder s in
+         let d' = expr vars builder d in
+         let w' = expr vars builder w in
+         let n = L.build_call create_edge_func [||] "create_edge" builder in
+         (match s with
+          | (A.Node(_,_), _) -> ignore (L.build_call set_edge_src_int_func [| n; s' |] "" builder)
+          | _ -> ());
+         (match d with
+          | (A.Node(_,_), _) -> ignore (L.build_call set_edge_dest_int_func [| n; d' |] "" builder)
+          | _ -> ());
+         (match w with
+          | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_int_func [| n; w' |] "" builder)
+          | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_str_func [| n; w' |] "" builder)
+          | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_void_func [| n; w' |] "" builder)
+          | _ -> ());
+         n
+      | SNodeExpr (l, d) ->
+         let l' = expr vars builder l in
+         let d' = expr vars builder d in
+         let n = L.build_call create_node_func [||] "create_node" builder in
+         (match l with
+          | (A.Int, _) -> ignore (L.build_call set_node_label_int_func [| n; l' |] "" builder)
+          | (A.String, _) -> ignore (L.build_call set_node_label_str_func [| n; l' |] "" builder)
+          | (A.Void, _) -> ignore (L.build_call set_node_label_void_func [| n; l' |] "" builder)
+          | _ -> () (* TODO *));
+         (match d with
+          | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_node_data_int_func [| n; d' |] "" builder)
+          | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_node_data_str_func [| n; d' |] "" builder)
+          | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder)
+          | _ -> () (* TODO *));
+         n
+      | SNull ->
+         L.const_null i32_t
+      | SNoexpr ->
+         L.undef (L.void_type context) (* placeholder *)
+    and list_converter vars lname = 
+      match lname with
+       | [] -> []
+       | _ -> expr vars builder (List.hd lname) :: list_converter vars (List.tl lname)
+    in
+ 
     let add_terminal builder instr =
       (* The current block where we're inserting instr *)
       match L.block_terminator (L.insertion_block builder) with

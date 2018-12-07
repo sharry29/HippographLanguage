@@ -1,0 +1,4 @@
+int main() {
+  graph<int> g = [1 -(1)- 2];
+  return 0;
+}
