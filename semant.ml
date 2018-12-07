@@ -153,6 +153,8 @@ let check (globals, funcs) =
         string_of_typ rvt ^ " in " ^ string_of_expr (Asn(var, e))
       in
 
+      let rvt = if (rvt, e') = (Void, SNull) then lvt else rvt in
+
       match lvt, rvt, e' with
       (* If left expression is a node with void type data, wrap right expression in a SNodeExpr *)
       | Node(_), Node(_), _ ->
