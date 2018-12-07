@@ -1,4 +1,4 @@
 int main() {
-  graph<int> g = [1 -(1)- 2];
+  graph<int:int, int> g = [1:0; 2:2];
   return 0;
 }
