@@ -197,7 +197,15 @@ let translate (globals, functions) =
          | String -> ret
          | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
          | Void -> L.build_load (L.build_bitcast ret void_ptr_t "bitcast" builder) "deref" builder);
-      | SAsn (s, e) ->
+      | SAsn (s, ((t, v) as e)) ->
+        (* If e is SNull, change to default value for type s *)
+        let v = match v with
+        | SNull -> (match t with
+          | Int -> SIntlit 0
+          | String -> SStringlit ""
+          | Bool -> SBoollit false )
+        | _ -> v
+      in
          let e' = expr vars builder e in
          ignore (L.build_store e' (lookup vars s) builder); e'
       | SGraphExpr(nlist, elist) ->
@@ -233,7 +241,7 @@ let translate (globals, functions) =
           | (A.Void, _) -> ignore (L.build_call set_node_label_void_func [| n; l' |] "" builder)
           | _ -> () (* TODO *));
          (match d with
-          | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_node_data_int_func [| n; d' |] "" builder)
+          | (A.Int, v) -> if v = SNull then ( (*call ignore(L.build set_node_data_int n 0 false*)) else ignore (L.build_call set_node_data_int_func [| n; d'(*; true*) |] "" builder)
           | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_node_data_str_func [| n; d' |] "" builder)
           | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder)
           | _ -> () (* TODO *));

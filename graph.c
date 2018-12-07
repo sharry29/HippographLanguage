@@ -7,6 +7,7 @@
 int VOIDTYPE = 1;
 int INTTYPE  = 2;
 int STRTYPE  = 3;
+int BOOLTYPE = 4;
 
 /* data structures */
 
@@ -24,6 +25,7 @@ typedef struct edge {
   primitive *w;
   int w_typ;
   struct edge *next;
+  bool has_val;
 } edge;
 
 typedef struct neighbor_list_item {
@@ -96,7 +98,7 @@ void *create_neighbor_list() {
 void *create_node() {
   node *n = (node *) malloc(sizeof(node));
   n -> label = NULL;
-  n -> data = NULL;
+  n -> data = 0;
   n -> has_val = false;
   n -> neighbor_list = create_neighbor_list();
   n -> neighbor_list -> hd = NULL;
@@ -128,13 +130,13 @@ void set_node_label_void(node *n, void *v) {
   n -> label_typ = VOIDTYPE;
 }
 
-void set_node_data_int(node *n, int i) {
+void set_node_data_int(node *n, int i) {//, bool flag {
   if (n -> data != NULL) {
     free(n -> data);
   }
   n -> data = create_prim_int(i);
   n -> data_typ = INTTYPE;
-  n -> has_val = true;
+  n -> has_val = true; //flag
 }
 
 void set_node_data_str(node *n, char *s) {
@@ -173,8 +175,7 @@ void *get_node_data(node *n) {
   int typ = n -> data_typ;
   void *data = NULL;
 
-  if (n -> has_val == false) { 
-  } else if (typ == INTTYPE) {
+  if (typ == INTTYPE) {
     data = (void *) &(n -> data -> i);
   } else if (typ == STRTYPE) {
     data = (void *) n -> data -> s;
@@ -192,6 +193,7 @@ void *create_edge(node *src, node *dst) {
   e -> dst = dst;
   e -> w = NULL;
   e -> next = NULL;
+  e -> has_val = false;
   return (void *) e;
 }
 
