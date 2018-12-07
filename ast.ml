@@ -123,19 +123,6 @@ let rec string_of_expr = function
       "], edges: [" ^ String.concat ", " (List.map string_of_expr edge_list) ^ "]]"
   | Noexpr -> ""
 
-let rec string_of_stmt = function
-    Block(stmts) ->
-      "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
-  | Expr(expr) -> string_of_expr expr ^ ";\n";
-  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n";
-  | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
-  | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
-      string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
-  | For(e1, e2, e3, s) ->
-      "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
-      string_of_expr e3  ^ ") " ^ string_of_stmt s
-  | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
-
 let rec string_of_typ = function
     Int    -> "int"
   | Bool   -> "bool"
@@ -148,6 +135,28 @@ let rec string_of_typ = function
   | Node(nl, nd)  -> "node<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ">"
   | Edge(vl)      -> "edge<" ^ string_of_typ vl ^ ">"
   | Graph(nl, nd, ew) -> "graph<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ", " ^ string_of_typ ew ^ ">"
+
+let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
+
+let rec string_of_stmt = function
+    Block(stmts) ->
+      "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
+  | Expr(expr) -> string_of_expr expr ^ ";\n";
+  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n";
+  | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
+  | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
+      string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
+  | For(e1, e2, e3, s) ->
+      "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
+      string_of_expr e3  ^ ") " ^ string_of_stmt s
+  | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
+  | Vdecl(t, var, expr) -> 
+      match expr with
+      | Noexpr ->
+          string_of_vdecl (t, var)
+      | _ ->
+          string_of_typ t ^ " " ^ string_of_expr expr ^ ";\n"
+
 
 let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
 
