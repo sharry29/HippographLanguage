@@ -25,7 +25,7 @@ typedef struct edge {
   primitive *w;
   int w_typ;
   struct edge *next;
-  bool has_val;
+  //bool has_val;
 } edge;
 
 typedef struct neighbor_list_item {
@@ -130,25 +130,25 @@ void set_node_label_void(node *n, void *v) {
   n -> label_typ = VOIDTYPE;
 }
 
-void set_node_data_int(node *n, int i) {//, bool flag {
+void set_node_data_int(node *n, int i, bool b) {
   if (n -> data != NULL) {
     free(n -> data);
   }
   n -> data = create_prim_int(i);
   n -> data_typ = INTTYPE;
-  n -> has_val = true; //flag
+  n -> has_val = b; //flag
 }
 
-void set_node_data_str(node *n, char *s) {
+void set_node_data_str(node *n, char *s, bool b) {
   if (n -> data != NULL) {
     free(n -> data);
   }
   n -> data = create_prim_str(s);
   n -> data_typ = STRTYPE;
-  n -> has_val = true;
+  n -> has_val = b;
 }
 
-void set_node_data_void(node *n, void *v) {
+void set_node_data_void(node *n, void *v) { //does this need has_val bool arg?
   if (n -> data != NULL) {
     free(n -> data);
   }
@@ -170,7 +170,7 @@ void *get_node_label(node *n) {
   return label;
 }
 
-void *get_node_data(node *n) {
+void *get_node_data(node *n) { //TODO: Checking has_val, return NULL?
 
   int typ = n -> data_typ;
   void *data = NULL;
@@ -193,7 +193,7 @@ void *create_edge(node *src, node *dst) {
   e -> dst = dst;
   e -> w = NULL;
   e -> next = NULL;
-  e -> has_val = false;
+  //e -> has_val = false;
   return (void *) e;
 }
 

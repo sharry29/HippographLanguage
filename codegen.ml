@@ -66,10 +66,10 @@ let translate (globals, functions) =
   let set_node_label_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
   let set_node_label_void_func : L.llvalue = L.declare_function "set_node_label_void" set_node_label_void_t the_module in
 
-  let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
+  let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i1_t |] in
   let set_node_data_int_func : L.llvalue = L.declare_function "set_node_data_int" set_node_data_int_t the_module in
 
-  let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
+  let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i1_t |] in
   let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
 
   let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
@@ -241,9 +241,9 @@ let translate (globals, functions) =
           | (A.Void, _) -> ignore (L.build_call set_node_label_void_func [| n; l' |] "" builder)
           | _ -> () (* TODO *));
          (match d with
-          | (A.Int, v) -> if v = SNull then ( (*call ignore(L.build set_node_data_int n 0 false*)) else ignore (L.build_call set_node_data_int_func [| n; d'(*; true*) |] "" builder)
-          | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_node_data_str_func [| n; d' |] "" builder)
-          | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder)
+          | (A.Int, v) -> if v = SNull then ignore (L.build_call set_node_data_int_func [| n; L.const_int i32_t 0; L.const_int i1_t 0 |] "" builder) else ignore (L.build_call set_node_data_int_func [| n; d'; L.const_int i1_t 1 |] "" builder)
+          | (A.String, v) -> if v = SNull then ignore (L.build_call set_node_data_str_func [| n; L.build_global_stringptr "" "str" builder; L.const_int i1_t 0 |] "" builder) else ignore (L.build_call set_node_data_str_func [| n; d'; L.const_int i1_t 1 |] "" builder)
+          | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder) (*Should void nodes always have has_val set to false?*)
           | _ -> () (* TODO *));
          n
       | SNull ->
