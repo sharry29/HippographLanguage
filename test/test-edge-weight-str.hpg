@@ -1,6 +1,0 @@
-int main() {
-  edge<string> e1 = 1 -("abc")- 2;
-  string n = e1.weight();
-  print(n);
-  return 0;
-}

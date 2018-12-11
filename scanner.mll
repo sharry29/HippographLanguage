@@ -44,7 +44,6 @@ rule token = parse
 | "void"   { VOIDTYPE }
 | "graph"  { GRAPHTYPE }
 | "node"   { NODETYPE }
-| "edge"   { EDGETYPE }
 | "-("     { LUEDGE }
 | ")-"     { RUEDGE }
 | "<("     { LDEDGE }

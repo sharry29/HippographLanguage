@@ -1,4 +1,0 @@
-int main() {
-  edge<void> e1 = 1 -(NULL)- 2;
-  return 0;
-}
