@@ -25,7 +25,7 @@ typedef struct edge {
   primitive *w;
   int w_typ;
   struct edge *next;
-  //bool has_val;
+  int has_val;
 } edge;
 
 typedef struct neighbor_list_item {
@@ -42,7 +42,7 @@ struct node {
   int label_typ;
   primitive *data;
   int data_typ;
-  bool has_val;
+  int has_val;
   neighbor_list *neighbor_list;
   node *next;
 };
@@ -99,7 +99,7 @@ void *create_node() {
   node *n = (node *) malloc(sizeof(node));
   n -> label = NULL;
   n -> data = 0;
-  n -> has_val = false;
+  n -> has_val = 0;
   n -> neighbor_list = create_neighbor_list();
   n -> neighbor_list -> hd = NULL;
   n -> next = NULL;
@@ -130,30 +130,31 @@ void set_node_label_void(node *n, void *v) {
   n -> label_typ = VOIDTYPE;
 }
 
-void set_node_data_int(node *n, int i, bool b) {
+void set_node_data_int(node *n, int i, int has_val) {
   if (n -> data != NULL) {
     free(n -> data);
   }
   n -> data = create_prim_int(i);
   n -> data_typ = INTTYPE;
-  n -> has_val = b; //flag
+  n -> has_val = has_val; //flag
 }
 
-void set_node_data_str(node *n, char *s, bool b) {
+void set_node_data_str(node *n, char *s, int has_val) {
   if (n -> data != NULL) {
     free(n -> data);
   }
   n -> data = create_prim_str(s);
   n -> data_typ = STRTYPE;
-  n -> has_val = b;
+  n -> has_val = has_val;
 }
 
-void set_node_data_void(node *n, void *v) { //does this need has_val bool arg?
+void set_node_data_void(node *n, void *v, int has_val) { //does this need has_val arg?
   if (n -> data != NULL) {
     free(n -> data);
   }
   n -> data = create_prim_void(v);
   n -> data_typ = VOIDTYPE;
+  n -> has_val = has_val;
 }
 
 void *get_node_label(node *n) {
@@ -170,8 +171,7 @@ void *get_node_label(node *n) {
   return label;
 }
 
-void *get_node_data(node *n) { //TODO: Checking has_val, return NULL?
-
+void *get_node_data(node *n) {
   int typ = n -> data_typ;
   void *data = NULL;
 
@@ -182,7 +182,7 @@ void *get_node_data(node *n) { //TODO: Checking has_val, return NULL?
   } else if (typ == VOIDTYPE) {
     data = (void *) n -> data -> v;
   }
-  return data;
+  return data;  // not guaranteed to return valid value if not has_val
 }
 
 /* EDGES */
@@ -193,7 +193,7 @@ void *create_edge(node *src, node *dst) {
   e -> dst = dst;
   e -> w = NULL;
   e -> next = NULL;
-  //e -> has_val = false;
+  e -> has_val = 0;
   return (void *) e;
 }
 
