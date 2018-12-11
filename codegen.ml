@@ -66,13 +66,13 @@ let translate (globals, functions) =
   let set_node_label_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
   let set_node_label_void_func : L.llvalue = L.declare_function "set_node_label_void" set_node_label_void_t the_module in
 
-  let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i1_t |] in
+  let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i32_t |] in
   let set_node_data_int_func : L.llvalue = L.declare_function "set_node_data_int" set_node_data_int_t the_module in
 
-  let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i1_t |] in
+  let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i32_t |] in
   let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
 
-  let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
+  let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t; i32_t |] in
   let set_node_data_void_func : L.llvalue = L.declare_function "set_node_data_void" set_node_data_void_t the_module in
 
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
@@ -134,20 +134,6 @@ let translate (globals, functions) =
                         with Not_found -> StringMap.find n global_vars
     in
     
-    let rec graph_add_node n nlist = 
-      match nlist with
-       | [] -> n
-       | _ -> let new_g = L.build_call add_node_func [| n; List.hd nlist |] "add_node" builder in
-              graph_add_node new_g (List.tl nlist)
-    in
-
-    let rec graph_add_edge n elist = 
-      match elist with
-       | [] -> n
-       | _ -> let new_g = L.build_call add_edge_func [| n; List.hd elist |] "add_edge" builder in
-              graph_add_edge new_g (List.tl elist)
-    in
-
     let rec expr vars builder ((ty,e) : sexpr) = match e with
       | SStringlit s -> L.build_global_stringptr s "str" builder
       | SIntlit i -> L.const_int i32_t i
@@ -209,11 +195,13 @@ let translate (globals, functions) =
          let e' = expr vars builder e in
          ignore (L.build_store e' (lookup vars s) builder); e'
       | SGraphExpr(nlist, elist) ->
-         let nlist' = list_converter vars nlist in
-         let elist' = list_converter vars elist in
-         let n = L.build_call create_graph_func [||] "create_graph" builder in
-         let n' = graph_add_node n nlist' in
-        graph_add_edge n' elist'     
+         let g = L.build_call create_graph_func [||] "create_graph" builder in
+         let create_items = List.map (fun x -> expr vars builder x) in
+         let add_nodes = List.map (fun n -> L.build_call add_node_func [| g; n |] "add_node" builder) in
+         let add_edges = List.map (fun e -> L.build_call add_edge_func [| g; e |] "add_edge" builder) in
+         ignore (add_nodes (create_items nlist));
+         ignore (add_edges (create_items elist));
+         g
       | SEdgeExpr(s, d, w) ->
          let s' = expr vars builder s in
          let d' = expr vars builder d in
@@ -241,19 +229,24 @@ let translate (globals, functions) =
           | (A.Void, _) -> ignore (L.build_call set_node_label_void_func [| n; l' |] "" builder)
           | _ -> () (* TODO *));
          (match d with
-          | (A.Int, v) -> if v = SNull then ignore (L.build_call set_node_data_int_func [| n; L.const_int i32_t 0; L.const_int i1_t 0 |] "" builder) else ignore (L.build_call set_node_data_int_func [| n; d'; L.const_int i1_t 1 |] "" builder)
-          | (A.String, v) -> if v = SNull then ignore (L.build_call set_node_data_str_func [| n; L.build_global_stringptr "" "str" builder; L.const_int i1_t 0 |] "" builder) else ignore (L.build_call set_node_data_str_func [| n; d'; L.const_int i1_t 1 |] "" builder)
-          | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder) (*Should void nodes always have has_val set to false?*)
+          | (A.Int, v) ->
+            if v = SNull
+            then ignore (L.build_call set_node_data_int_func [| n; L.const_int i32_t 0; L.const_int i32_t 0 |] "" builder)
+            else ignore (L.build_call set_node_data_int_func [| n; d'; L.const_int i32_t 1 |] "" builder)
+          | (A.String, v) ->
+            if v = SNull
+            then ignore (L.build_call set_node_data_str_func [| n; L.build_global_stringptr "" "str" builder; L.const_int i1_t 0 |] "" builder)
+            else ignore (L.build_call set_node_data_str_func [| n; d'; L.const_int i32_t 1 |] "" builder)
+          | (A.Void, v) ->
+            if v = SNull
+            then ()
+            else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder) (*Should void nodes always have has_val set to false?*)
           | _ -> () (* TODO *));
          n
       | SNull ->
          L.const_null i32_t
       | SNoexpr ->
          L.undef (L.void_type context) (* placeholder *)
-    and list_converter vars lname = 
-      match lname with
-       | [] -> []
-       | _ -> expr vars builder (List.hd lname) :: list_converter vars (List.tl lname)
     in
  
     let add_terminal builder instr =
