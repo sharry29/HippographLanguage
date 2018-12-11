@@ -196,11 +196,8 @@ let translate (globals, functions) =
          ignore (L.build_store e' (lookup vars s) builder); e'
       | SGraphExpr(nlist, elist) ->
          let g = L.build_call create_graph_func [||] "create_graph" builder in
-         let create_items = List.map (fun x -> expr vars builder x) in
-         let add_nodes = List.map (fun n -> L.build_call add_node_func [| g; n |] "add_node" builder) in
-         let add_edges = List.map (fun e -> L.build_call add_edge_func [| g; e |] "add_edge" builder) in
-         ignore (add_nodes (create_items nlist));
-         ignore (add_edges (create_items elist));
+         ignore (List.map (fun n -> L.build_call add_node_func [| g; expr vars builder n |] "add_node" builder) nlist);
+         ignore (List.map (fun e -> L.build_call add_edge_func [| g; expr vars builder e |] "add_edge" builder) elist);
          g
       | SEdgeExpr(s, d, w) ->
          let s' = expr vars builder s in
