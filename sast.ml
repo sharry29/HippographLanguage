@@ -46,7 +46,7 @@ type sfdecl = {
 
 type sprogram = binding list * sfdecl list
 
-let rec string_of_sexpr (_, e) =
+let rec string_of_sexpr (t, e) =
   match e with
     SIntlit(l) -> string_of_int l
   | SBoollit(true) -> "true"
@@ -54,7 +54,7 @@ let rec string_of_sexpr (_, e) =
   | SFloatlit(l) -> l
   | SVar(s) -> s
   | SStringlit(l) -> l
-  | SNull -> "null"
+  | SNull -> string_of_typ t ^ " null"
   | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
   | SUnop(o, e) -> string_of_uop o ^ string_of_sexpr e 

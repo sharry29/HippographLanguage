@@ -122,7 +122,7 @@ let check (globals, funcs) =
       | Boollit l   -> (Bool, SBoollit l)
       | Charlit l   -> (Char, SCharlit l)
       | Stringlit l -> (String, SStringlit l)
-      | Null -> (Void, SNull)
+      | Null -> (Bool, SNull)
       (*| Funsig      -> (* to be completed *)*)
       | Noexpr      -> (Void, SNoexpr)
       | Var s       -> (type_of_variable vars s, SVar s)
@@ -146,28 +146,42 @@ let check (globals, funcs) =
       | GraphExpr(node_list, edge_list) ->
          check_graph_expr vars node_list edge_list
 
+    and coerce_null_to_typ new_typ e =
+      match e with
+      | (Bool, SNull) -> (new_typ, SNull)
+      | _ -> e
+
     and check_asn_expr vars var e =
-      let lvt = type_of_variable vars var
-      and (rvt, e') = expr vars e in
+      let lvt = type_of_variable vars var in
+      let (rvt, e') = coerce_null_to_typ lvt (expr vars e) in
       let err = "illegal assignment " ^ string_of_typ lvt ^ " = " ^
         string_of_typ rvt ^ " in " ^ string_of_expr (Asn(var, e))
       in
 
-      let rvt = if (rvt, e') = (Void, SNull) then lvt else rvt in
-
       match lvt, rvt, e' with
-      (* If left expression is a node with void type data, wrap right expression in a SNodeExpr *)
       | Node(_), Node(_), _ ->
+         (* If left expression is a node with bool type data, wrap right expression in a SNodeExpr *)
          (check_asn lvt rvt err, SAsn(var, (rvt, e')))
-      | Node(nlt, Void), _, _ ->
-         (check_asn nlt rvt err, SAsn(var, (lvt, SNodeExpr((rvt, e'), (Void, SNull)))))
-      (* If right expression is an empty graph of void type, infer type from left expression *)
-      | Graph(llt, ldt, lwt), Graph(rlt, rdt, rwt), SGraphExpr(nl, el) ->
-         let lt = if llt != rlt && rlt = Void && nl = [] then llt else check_asn llt rlt err in
-         let dt = if ldt != rdt && rdt = Void && nl = [] then ldt else check_asn ldt rdt err in
-         let wt = if lwt != rwt && rwt = Void && el = [] then lwt else check_asn lwt rwt err in
-         let t = Graph(lt, dt, wt) in
-         (t, SAsn(var, (t, e')))
+      | Node(nlt, Bool), _, _ ->
+         (check_asn nlt rvt err, SAsn(var, (lvt, SNodeExpr((rvt, e'), (Bool, SNull)))))
+      | Graph(llt, ldt, lwt), Graph(_, _, _), SGraphExpr(nl, el) ->
+         (* Coerce (Bool, SNull) to correct type then check type equality *)
+         let nl' = List.map (fun (_, e) -> match e with
+                                           | SNodeExpr((lt, le), d) ->
+                                              let (dt, de) = coerce_null_to_typ ldt d in
+                                              let lt = check_asn llt lt err in
+                                              let dt = check_asn ldt dt err in
+                                              (Node(lt, dt), SNodeExpr((lt, le), (dt, de)))
+                                           | _ -> raise Unsupported_constructor) nl in
+         let el' = List.map (fun (_, e) -> match e with
+                                           | SEdgeExpr(src, dst, w) ->
+                                              let (wt, we) = coerce_null_to_typ lwt w in
+                                              let wt = check_asn lwt wt err in
+                                              (Edge(lwt), SEdgeExpr(src, dst, (wt, we)))
+                                           | _ -> raise Unsupported_constructor) el in
+
+         let t = Graph(llt, ldt, lwt) in
+         (t, SAsn(var, (t, SGraphExpr(nl', el'))))
       | _ ->
          (check_asn lvt rvt err, SAsn(var, (rvt, e')))
 
@@ -231,46 +245,60 @@ let check (globals, funcs) =
            (md.typ, SMCall(instance', mname, args'))
 
     and check_graph_expr vars node_list edge_list =
-     (* infer node label/data types from first node in list if any,
+     (* infer node label/data types from first nodes in list if any,
         and check that all items have the same type *)
-     let node_label_typ, node_data_typ, s_node_list =
-       (match node_list with
-        | [] ->
-           (Void, Void, []) (* void type, for now *)
-        | NodeExpr(node_label, node_data) :: _ ->
-           let lt, _ = expr vars node_label in
-           let dt, _ = expr vars node_data in
-           let map_node_expr n =
-             let l, d = unwrap_node_expr n in
-             let (lt', _) as l' = expr vars l in
-             let (dt', _) as d' = expr vars d in
-             if lt = lt' && dt = dt'
-             then (Node(lt, dt), SNodeExpr(l', d'))
-             else raise (Failure ("type mismatch in graph nodes"))
-           in
-           (lt, dt, List.map map_node_expr node_list)
-        | _ ->
-           raise Unsupported_constructor)
-     in
-     (* infer edge weight types from first edge in list if any,
+      let node_label_typ, node_data_typ, s_node_list =
+        if node_list = [] 
+        then (Bool, Bool, []) (* bool type, for now *)
+        else let err = "type mismatch in graph nodes" in
+          let check_node_typ (lt_opt, dt_opt) n =
+            match n with
+            | (Node(lt, dt), SNodeExpr(_, d)) ->
+               (* check matching node label *)
+               let lt_opt = (match lt_opt with
+               | None -> Some(lt)
+               | Some(lt') -> if lt = lt'
+                              then lt_opt
+                              else raise (Failure err)) in
+               (* check matching node data *)
+               let dt_opt = (match d with
+               | (Bool, SNull) -> dt_opt
+               | _ -> match dt_opt with
+                      | None -> Some(dt)
+                      | Some(dt') -> if dt = dt'
+                                     then dt_opt
+                                     else raise (Failure err))
+               in (lt_opt, dt_opt)
+            | _ -> raise Unsupported_constructor
+          in
+          let node_list' = List.map (expr vars) node_list in
+          match List.fold_left check_node_typ (None, None) node_list' with
+          | None, _ -> raise (Failure "graph node names are required")
+          | Some(lt), None -> (lt, Bool, node_list')
+          | Some(lt), Some(dt) -> (lt, dt, node_list')
+      in
+      (* infer edge weight types from first edge in list if any,
         and check that all items have the same type *)
-     let edge_typ, s_edge_list =
-       (match edge_list with
-        | [] ->
-           (Void, []) (* void type, for now *)
-        | EdgeExpr(_, _, edge_weight) :: _ ->
-           let wt, _ = expr vars edge_weight in
-           let map_edge_expr e =
-             let src, dst, w = unwrap_edge_expr e in
-             let src' = expr vars src in
-             let dst' = expr vars dst in
-             let (wt', _) as w' = expr vars w in
-             if wt = wt'
-             then (Edge(wt), SEdgeExpr(src', dst', w'))
-             else raise (Failure ("type mismatch in graph edges"))
-           in (wt, List.map map_edge_expr edge_list)
-        | _ ->
-           raise Unsupported_constructor)
+      let edge_typ, s_edge_list =
+        if edge_list = []
+        then (Bool, []) (* bool type, for now *)
+        else let err = "type mismatch in graph edges" in
+          let check_edge_typ wt_opt e =
+            match e with
+            | (Edge(wt), SEdgeExpr(_, _, w)) ->
+              (match w with
+               | (Bool, SNull) -> wt_opt
+               | _ -> (match wt_opt with
+                       | None -> Some(wt)
+                       | Some(wt') -> if wt = wt'
+                                      then wt_opt
+                                      else raise (Failure err)))
+            | _ -> raise Unsupported_constructor
+          in
+          let edge_list' = List.map (expr vars) edge_list in
+          match List.fold_left check_edge_typ None edge_list' with
+          | None -> (Bool, edge_list')
+          | Some(wt) -> (wt, edge_list')
      in
      (Graph(node_label_typ, node_data_typ, edge_typ), SGraphExpr(s_node_list, s_edge_list))
     in
@@ -310,7 +338,7 @@ let check (globals, funcs) =
         else let vars' = StringMap.add s ty vars in
              (vars', SVdecl (ty, s, expr vars' e))
       | Return e -> 
-         let (t, e') = expr vars e in
+         let (t, e') = coerce_null_to_typ func.typ (expr vars e) in
          if t = func.typ then (vars, SReturn (t, e'))
          else raise (Failure ("return gives " ^ string_of_typ t ^ " expected " ^
                               string_of_typ func.typ ^ " in " ^ string_of_expr e))

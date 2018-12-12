@@ -1,0 +1,12 @@
+int main() {
+  graph<int:int, int> g1 = [];
+  graph<int:int, int> g2 = [1];
+  graph<int:int, int> g3 = [1:NULL];
+  graph<int:int, int> g4 = [1:2 <()> 3:NULL];
+  graph<int:int, int> g5 = [1:2 <(NULL)> 3:NULL];
+  graph<int:int, int> g6 = [1:NULL <()> 2:3];
+  graph<int:int, int> g7 = [1 <()> 2:3];
+  graph<int:int, int> g8 = [1:2 <(3)> 4:NULL -()> 5:6; 6 <()- 7];
+
+  return 0;
+}

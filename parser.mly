@@ -83,11 +83,11 @@ typ:
 | STRINGTYPE { String }
 | FUNTYPE    { Fun }
 | GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
-| GRAPHTYPE LANGLE typ COMMA typ RANGLE            { Graph($3, Void, $5) }
-| GRAPHTYPE LANGLE typ COLON typ RANGLE            { Graph($3, $5, Void) }
-| GRAPHTYPE LANGLE typ RANGLE                      { Graph($3, Void, Void) }
+| GRAPHTYPE LANGLE typ COMMA typ RANGLE            { Graph($3, Bool, $5) }
+| GRAPHTYPE LANGLE typ COLON typ RANGLE            { Graph($3, $5, Bool) }
+| GRAPHTYPE LANGLE typ RANGLE                      { Graph($3, Bool, Bool) }
 | NODETYPE  LANGLE typ COLON typ RANGLE            { Node($3, $5) }
-| NODETYPE  LANGLE typ RANGLE                      { Node($3, Void) }
+| NODETYPE  LANGLE typ RANGLE                      { Node($3, Bool) }
 
 stmt_list:
   { [] }
@@ -156,3 +156,7 @@ node_edge_list:
 | node_edge_list LDEDGE expr RDEDGE expr { update_node_edge_list_with_edge $1 $3 (construct_node_expr $5)  }
 | node_edge_list LUEDGE expr RDEDGE expr { update_node_edge_list_with_redge $1 $3 (construct_node_expr $5)  }
 | node_edge_list LDEDGE expr RUEDGE expr { update_node_edge_list_with_ledge $1 $3 (construct_node_expr $5)  }
+| node_edge_list LUEDGE RUEDGE expr      { update_node_edge_list_with_edge $1 Null (construct_node_expr $4)  }
+| node_edge_list LDEDGE RDEDGE expr      { update_node_edge_list_with_edge $1 Null (construct_node_expr $4)  }
+| node_edge_list LUEDGE RDEDGE expr      { update_node_edge_list_with_redge $1 Null (construct_node_expr $4)  }
+| node_edge_list LDEDGE RUEDGE expr      { update_node_edge_list_with_ledge $1 Null (construct_node_expr $4)  }

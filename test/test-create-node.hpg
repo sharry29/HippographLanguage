@@ -3,8 +3,8 @@ int main() {
   node<string:int> n2 = "abc":42;
   node<int:string> n3 = 42:"abc";
   node<int:int> n4 = 42:1;
-  node<string:void> n5 = "abc":NULL;
-  node<int:void> n6 = 42:NULL;
+  node<string:bool> n5 = "abc":NULL;
+  node<int:bool> n6 = 42:NULL;
   node<string> n7 = "abc";
   node<int> n8 = 42;
   return 0;

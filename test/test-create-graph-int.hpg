@@ -1,4 +1,0 @@
-int main() {
-  graph<int:int, int> g = [1:0 <(5)- 2:2];
-  return 0;
-}
