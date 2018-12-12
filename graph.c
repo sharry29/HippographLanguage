@@ -74,12 +74,6 @@ void *create_prim_str(char *s) {
   return (void *) p;
 }
 
-void *create_prim_void(void *v) {
-  primitive *p = (primitive *) malloc(sizeof(primitive));
-  p -> v = v;
-  return (void *) p;
-}
-
 /* NODES */
 
 void *create_neighbor_list_item(edge *e) {
@@ -114,6 +108,14 @@ void set_node_label_int(node *n, int i) {
   n -> label_typ = INTTYPE;
 }
 
+void set_node_label_bool(node *n, int i) {
+  if (n -> label != NULL) {
+    free(n -> label);
+  }
+  n -> label = create_prim_int(i);
+  n -> label_typ = BOOLTYPE;
+}
+
 void set_node_label_str(node *n, char *s) {
   if (n -> label != NULL) {
     free(n -> label);
@@ -122,20 +124,21 @@ void set_node_label_str(node *n, char *s) {
   n -> label_typ = STRTYPE;
 }
 
-void set_node_label_void(node *n, void *v) {
-  if (n -> label != NULL) {
-    free(n -> label);
-  }
-  n -> label = create_prim_void(v);
-  n -> label_typ = VOIDTYPE;
-}
-
 void set_node_data_int(node *n, int i, int has_val) {
   if (n -> data != NULL) {
     free(n -> data);
   }
   n -> data = create_prim_int(i);
   n -> data_typ = INTTYPE;
+  n -> has_val = has_val; //flag
+}
+
+void set_node_data_bool(node *n, int i, int has_val) {
+  if (n -> data != NULL) {
+    free(n -> data);
+  }
+  n -> data = create_prim_int(i);
+  n -> data_typ = BOOLTYPE;
   n -> has_val = has_val; //flag
 }
 
@@ -148,20 +151,11 @@ void set_node_data_str(node *n, char *s, int has_val) {
   n -> has_val = has_val;
 }
 
-void set_node_data_void(node *n, void *v, int has_val) { //does this need has_val arg?
-  if (n -> data != NULL) {
-    free(n -> data);
-  }
-  n -> data = create_prim_void(v);
-  n -> data_typ = VOIDTYPE;
-  n -> has_val = has_val;
-}
-
 void *get_node_label(node *n) {
   int typ = n -> label_typ;
   void *label = NULL;
 
-  if (typ == INTTYPE) {
+  if (typ == INTTYPE || typ == BOOLTYPE) {
     label = (void *) &(n -> label -> i);
   } else if (typ == STRTYPE) {
     label = (void *) n -> label -> s;
@@ -175,7 +169,7 @@ void *get_node_data(node *n) {
   int typ = n -> data_typ;
   void *data = NULL;
 
-  if (typ == INTTYPE) {
+  if (typ == INTTYPE || typ == BOOLTYPE) {
     data = (void *) &(n -> data -> i);
   } else if (typ == STRTYPE) {
     data = (void *) n -> data -> s;
@@ -187,94 +181,55 @@ void *get_node_data(node *n) {
 
 /* EDGES */
 
-void *create_edge(node *src, node *dst) {
-  edge *e = (edge *) malloc(sizeof(edge));
-  e -> src = src;
-  e -> dst = dst;
-  e -> w = NULL;
-  e -> next = NULL;
-  e -> has_val = 0;
-  return (void *) e;
-}
-
-void set_edge_src_int(edge *e, int i) {
-  if (e -> src != NULL) {
-    free(e -> src);
-  }
-  e -> src = create_prim_int(i);
-}
-
-void set_edge_src_str(edge *e, char *s) {
-  if (e -> src != NULL) {
-    free(e -> src);
-  }
-  e -> src = create_prim_str(s);
-}
-
-void set_edge_src_void(edge *e, void *v) {
-  if (e -> src != NULL) {
-    free(e -> src);
-  }
-  e -> src = create_prim_void(v);
-}
-
-void set_edge_dst_int(edge *e, int i) {
-  if (e -> dst != NULL) {
-    free(e -> dst);
-  }
-  e -> dst = create_prim_int(i);
-}
-
-void set_edge_dst_str(edge *e, char *s) {
-  if (e -> dst != NULL) {
-    free(e -> dst);
-  }
-  e -> dst = create_prim_str(s);
-}
-
-void set_edge_dst_void(edge *e, void *v) {
-  if (e -> dst != NULL) {
-    free(e -> dst);
-  }
-  e -> dst = create_prim_void(v);
-}
-
-void set_edge_w_int(edge *e, int i) {
+void set_edge_w_int(edge *e, int i, int has_val) {
   if (e -> w != NULL) {
     free(e -> w);
   }
   e -> w = create_prim_int(i);
+  e -> has_val = has_val;
   e -> w_typ = INTTYPE;
 }
 
-void set_edge_w_str(edge *e, char *s) {
+void set_edge_w_bool(edge *e, int i, int has_val) {
+  if (e -> w != NULL) {
+    free(e -> w);
+  }
+  e -> w = create_prim_int(i);
+  e -> has_val = has_val;
+  e -> w_typ = BOOLTYPE;
+}
+
+void set_edge_w_str(edge *e, char *s, int has_val) {
   if (e -> w != NULL) {
     free(e -> w);
   }
   e -> w = create_prim_str(s);
+  e -> has_val = has_val;
   e -> w_typ = STRTYPE;
-}
-
-void set_edge_w_void(edge *e, void *v) {
-  if (e -> w != NULL) {
-    free(e -> w);
-  }
-  e -> w = create_prim_void(v);
-  e -> w_typ = VOIDTYPE;
 }
 
 void *get_edge_w(edge *e) {
   int typ = e -> w_typ;
   void *w = NULL;
 
-  if (typ == INTTYPE) {
+  if (typ == INTTYPE || typ == BOOLTYPE) {
     w = (void *) &(e -> w -> i);
   } else if (typ == STRTYPE) {
     w = (void *) e -> w -> s;
   } else if (typ == VOIDTYPE) {
     w = (void *) e -> w -> v;
   }
-  return w;
+  return w;  // not guaranteed to return valid value if not has_val
+}
+
+void *create_edge() {
+  edge *e = (edge *) malloc(sizeof(edge));
+  e -> src = NULL;
+  e -> dst = NULL;
+  e -> w = NULL;
+  e -> next = NULL;
+  e -> has_val = 0;
+  return e;
 }
 
 /* GRAPHS */
@@ -298,32 +253,10 @@ void *create_graph() {
   return (void *) g;
 }
 
-edge *get_edge_by_ptr(graph *g, edge *e) {
-  edge *curr = g -> edge_list -> hd;
-  while (curr != NULL) {
-    if (curr == e) {
-      return curr;
-    }
-    curr = curr -> next;
-  }
-  return NULL;
-}
-
-node *get_node_by_ptr(graph *g, node *n) {
-  node *curr = g -> node_list -> hd;
-  while (curr != NULL) {
-    if (curr == n) {
-      return curr;
-    }
-    curr = curr -> next;
-  }
-  return NULL;
-}
-
 node *get_node_by_label_int(graph *g, int label) {
   node *curr = g -> node_list -> hd;
   while (curr != NULL) {
-    if (curr -> label_typ == INTTYPE && *(int *) get_node_label(curr) == label) {
+    if ((curr -> label_typ == INTTYPE || curr -> label_typ == BOOLTYPE) && *(int *) get_node_label(curr) == label) {
       return curr;
     }
     curr = curr -> next;
@@ -335,17 +268,6 @@ node *get_node_by_label_str(graph *g, char *label) {
   node *curr = g -> node_list -> hd;
   while (curr != NULL) {
     if (curr -> label_typ == STRTYPE && strcmp((char *) get_node_label(curr), label) == 0) {
-      return curr;
-    }
-    curr = curr -> next;
-  }
-  return curr;
-}
-
-node *get_node_by_label_void(graph *g, void *label) {
-  node *curr = g -> node_list -> hd;
-  while (curr != NULL) {
-    if (curr -> label_typ == VOIDTYPE && get_node_label(curr) == label) {
       return curr;
     }
     curr = curr -> next;
@@ -371,19 +293,13 @@ int add_neighbor(node *n, edge *e) {
   return 0;
 }
 
-int add_edge(graph *g, edge *e) {
-  // add to neighbors
-  node *src = get_node_by_ptr(g, e -> src);
-  node *dst = get_node_by_ptr(g, e -> dst);
-  if (src == NULL || dst == NULL || add_neighbor(src, e) < 0) return -1;
-
-  // add to edge list
-  if (g -> edge_list -> hd == NULL) {
-    g -> edge_list -> hd = e;
-  } else if (g -> edge_list -> hd == e) {
+int add_edge_to_edge_list(edge *e, edge_list *el) {
+  if (el -> hd == NULL) {
+    el -> hd = e;
+  } else if (el -> hd == e) {
     return -1;
   } else {
-    edge *curr = g -> edge_list -> hd;
+    edge *curr = el -> hd;
     while (curr -> next != NULL) {
       if (curr -> next == e) return -1;
       curr = curr -> next;
@@ -391,6 +307,40 @@ int add_edge(graph *g, edge *e) {
     curr -> next = e;
   }
   return 0;
+}
+
+void *add_edge_int(graph *g, edge *e, int src, int dst) {
+  e -> src = get_node_by_label_int(g, src);
+  e -> dst = get_node_by_label_int(g, dst);
+  e -> w = NULL;
+  e -> next = NULL;
+  e -> has_val = 0;
+
+  // add to neighbors
+  if (e -> src == NULL || e -> dst == NULL ||
+      add_neighbor(e -> src, e) < 0 ||
+      add_edge_to_edge_list(e, g -> edge_list) < 0) return NULL;
+
+  return e;
+}
+
+void *add_edge_bool(graph *g, edge *e, int src, int dst) {
+  return add_edge_int(g, e, src, dst);
+}
+
+void *add_edge_str(graph *g, edge *e, char *src, char *dst) {
+  e -> src = get_node_by_label_str(g, src);
+  e -> dst = get_node_by_label_str(g, dst);
+  e -> w = NULL;
+  e -> next = NULL;
+  e -> has_val = 0;
+
+  // add to neighbors
+  if (e -> src == NULL || e -> dst == NULL ||
+      add_neighbor(e -> src, e) < 0 ||
+      add_edge_to_edge_list(e, g -> edge_list) < 0) return NULL;
+
+  return e;
 }
 
 int add_node(graph *g, node *n) {

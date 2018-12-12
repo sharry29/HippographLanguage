@@ -6,7 +6,8 @@ int main() {
   graph<int:int, int> g5 = [1:2 <(NULL)> 3:NULL];
   graph<int:int, int> g6 = [1:NULL <()> 2:3];
   graph<int:int, int> g7 = [1 <()> 2:3];
-  graph<int:int, int> g8 = [1:2 <(3)> 4:NULL -()> 5:6; 6 <()- 7];
+  graph<int:int, int> g8 = [1:2 <(3)> 4:NULL -()> 5:42; 5 <()- 6];
+  graph<int:int, int> g9 = [1 <()> 2:NULL -()> 3:NULL; 3 <()- 4];
 
   return 0;
 }

@@ -1,0 +1,1 @@
+Fatal error: exception Failure("illegal assignment graph<int, bool, int> = graph<int, string, bool> in g = [nodes: [1: foo], edges: []]")

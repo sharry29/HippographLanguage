@@ -1,0 +1,19 @@
+int main() {
+  graph<bool:bool, bool> g0 = [true: false -(true)> false: true];
+
+(*  graph<bool:bool, bool> g0 = [true: false <(true)> false: true];
+
+  graph<int:bool, bool> g1 = [];
+  graph<int:bool, bool> g2 = [1];
+  graph<int:bool, bool> g3 = [1:NULL];
+  graph<int:bool, bool> g4 = [1:true];
+  graph<int:bool, bool> g5 = [1:true <()> 2:NULL];
+  graph<int:bool, bool> g6 = [1:NULL <()> 2:true];
+  graph<int:bool, bool> g7 = [1:true <(NULL)> 2:NULL];
+  graph<int:bool, bool> g8 = [1:false <()> 2:true];
+  graph<int:bool, bool> g9 = [1 <()> 2:true];
+  graph<int:bool, bool> g10 = [1:true <(false)> 2:NULL -(true)> 3:true; 3 <()- 4];
+  graph<int:bool, bool> g11 = [1 <()> 2:NULL -()> 3:NULL; 3 <()- 4];*)
+
+  return 0;
+}

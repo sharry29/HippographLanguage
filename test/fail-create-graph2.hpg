@@ -1,0 +1,4 @@
+int main() {
+  graph<int, bool> g = [1:2];
+  return 0;
+}

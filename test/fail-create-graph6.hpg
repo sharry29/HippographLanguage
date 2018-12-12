@@ -1,0 +1,4 @@
+int main() {
+  graph<int:bool, int> g = [1:true <()> 2:"foo"];
+  return 0;
+}

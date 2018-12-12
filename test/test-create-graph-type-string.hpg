@@ -1,0 +1,13 @@
+int main() {
+  graph<string:string, string> g1 = [];
+  graph<string:string, string> g2 = ["foo"];
+  graph<string:string, string> g3 = ["foo":NULL];
+  graph<string:string, string> g4 = ["foo":"bar" <()> "baz":NULL];
+  graph<string:string, string> g5 = ["foo":"bar" <(NULL)> "baz":NULL];
+  graph<string:string, string> g6 = ["foo":NULL <()> "bar":"baz"];
+  graph<string:string, string> g7 = ["foo" <()> "bar":"baz"];
+  graph<string:string, string> g8 = ["a":"b" <("c")> "d":NULL -()> "e":"f"; "g" <()- "h"];
+  graph<string:string, string> g9 = ["a" <()> "b":NULL -()> "c":NULL; "c" <()- "d"];
+
+  return 0;
+}

@@ -1,0 +1,4 @@
+int main() {
+  graph<int:int> g = [NULL:5];
+  return 0;
+}

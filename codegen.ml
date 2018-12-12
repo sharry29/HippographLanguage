@@ -48,50 +48,50 @@ let translate (globals, functions) =
   let add_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t |] in
   let add_node_func : L.llvalue = L.declare_function "add_node" add_node_t the_module in
 
-  let add_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t |] in
-  let add_edge_func : L.llvalue = L.declare_function "add_edge" add_edge_t the_module in
-
   let create_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
   let create_node_func : L.llvalue = L.declare_function "create_node" create_node_t the_module in
 
   let create_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
   let create_edge_func : L.llvalue = L.declare_function "create_edge" create_edge_t the_module in
 
+  let add_edge_int_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t; i32_t; i32_t |] in
+  let add_edge_int_func : L.llvalue = L.declare_function "add_edge_int" add_edge_int_t the_module in
+
+  let add_edge_bool_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t; i1_t; i1_t |] in
+  let add_edge_bool_func : L.llvalue = L.declare_function "add_edge_bool" add_edge_bool_t the_module in
+
+  let add_edge_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t; str_t; str_t |] in
+  let add_edge_str_func : L.llvalue = L.declare_function "add_edge_str" add_edge_str_t the_module in
+
   let set_node_label_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
   let set_node_label_int_func : L.llvalue = L.declare_function "set_node_label_int" set_node_label_int_t the_module in
+
+  let set_node_label_bool_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i1_t |] in
+  let set_node_label_bool_func : L.llvalue = L.declare_function "set_node_label_bool" set_node_label_bool_t the_module in
 
   let set_node_label_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
   let set_node_label_str_func : L.llvalue = L.declare_function "set_node_label_str" set_node_label_str_t the_module in
 
-  let set_node_label_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
-  let set_node_label_void_func : L.llvalue = L.declare_function "set_node_label_void" set_node_label_void_t the_module in
-
-  let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i32_t |] in
+  let set_node_data_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i1_t |] in
   let set_node_data_int_func : L.llvalue = L.declare_function "set_node_data_int" set_node_data_int_t the_module in
 
-  let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i32_t |] in
-  let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
+  let set_node_data_bool_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i1_t; i1_t |] in
+  let set_node_data_bool_func : L.llvalue = L.declare_function "set_node_data_bool" set_node_data_bool_t the_module in
 
-  let set_node_data_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t; i32_t |] in
-  let set_node_data_void_func : L.llvalue = L.declare_function "set_node_data_void" set_node_data_void_t the_module in
+  let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i1_t |] in
+  let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
 
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
 
-  let set_edge_src_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
-  let set_edge_src_int_func : L.llvalue = L.declare_function "set_edge_src_int" set_edge_src_int_t the_module in
-
-  let set_edge_dest_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
-  let set_edge_dest_int_func : L.llvalue = L.declare_function "set_edge_dest_int" set_edge_dest_int_t the_module in
-
-  let set_edge_w_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t |] in
+  let set_edge_w_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i1_t |] in
   let set_edge_w_int_func : L.llvalue = L.declare_function "set_edge_w_int" set_edge_w_int_t the_module in
 
-  let set_edge_w_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t |] in
-  let set_edge_w_str_func : L.llvalue = L.declare_function "set_edge_w_str" set_edge_w_str_t the_module in
+  let set_edge_w_bool_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i1_t; i1_t |] in
+  let set_edge_w_bool_func : L.llvalue = L.declare_function "set_edge_w_bool" set_edge_w_bool_t the_module in
 
-  let set_edge_w_void_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; void_ptr_t |] in
-  let set_edge_w_void_func : L.llvalue = L.declare_function "set_edge_w_void" set_edge_w_void_t the_module in
+  let set_edge_w_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i1_t |] in
+  let set_edge_w_str_func : L.llvalue = L.declare_function "set_edge_w_str" set_edge_w_str_t the_module in
 
   let get_edge_w_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_edge_w_func : L.llvalue = L.declare_function "get_edge_w" get_edge_w_t the_module in
@@ -174,74 +174,83 @@ let translate (globals, functions) =
          let n_ptr = expr vars builder n in
          let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
          (match ty with
-         | String -> ret
-         | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
+         | A.String -> ret
+         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
       | SMCall (n, "weight", []) ->
          let n_ptr = expr vars builder n in
          let ret = L.build_call get_edge_w_func [| n_ptr |] "tmp_data" builder in
          (match ty with
-         | String -> ret
-         | Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
-         | Void -> L.build_load (L.build_bitcast ret void_ptr_t "bitcast" builder) "deref" builder);
-      | SAsn (s, ((t, v) as e)) ->
-        (* If e is SNull, change to default value for type s *)
-        let v = match v with
-        | SNull -> (match t with
-          | Int -> SIntlit 0
-          | String -> SStringlit ""
-          | Bool -> SBoollit false )
-        | _ -> v
-      in
-         let e' = expr vars builder e in
+          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+          | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+          | A.String -> ret)
+      | SAsn (s, (t, v)) ->
+         (* If e is SNull, change to default value for type s *)
+         let v = match v with
+         | SNull -> (match t with
+           | A.Int -> SIntlit 0
+           | A.Bool -> SBoollit false
+           | A.String -> SStringlit "")
+         | _ -> v
+         in
+         let e' = expr vars builder (t, v) in
          ignore (L.build_store e' (lookup vars s) builder); e'
       | SGraphExpr(nlist, elist) ->
          let g = L.build_call create_graph_func [||] "create_graph" builder in
          ignore (List.map (fun n -> L.build_call add_node_func [| g; expr vars builder n |] "add_node" builder) nlist);
-         ignore (List.map (fun e -> L.build_call add_edge_func [| g; expr vars builder e |] "add_edge" builder) elist);
+         ignore (List.map (fun e -> let f, src', dst' =
+                             match e with
+                             | (_, SEdgeExpr(src, dst, _)) ->
+                                (match src with
+                                 | (A.Int, _) -> add_edge_int_func
+                                 | (A.Bool, _) -> add_edge_bool_func
+                                 | (A.String, _) -> add_edge_str_func),
+                                expr vars builder src,
+                                expr vars builder dst
+                             | _ -> raise A.Unsupported_constructor
+                             in L.build_call f [| g; expr vars builder e; src'; dst' |] "add_edge" builder) elist);
          g
-      | SEdgeExpr(s, d, w) ->
-         let s' = expr vars builder s in
-         let d' = expr vars builder d in
+      | SEdgeExpr(_, _, w) ->
+         let e = L.build_call create_edge_func [||] "edge" builder in
          let w' = expr vars builder w in
-         let n = L.build_call create_edge_func [||] "create_edge" builder in
-         (match s with
-          | (A.Node(_,_), _) -> ignore (L.build_call set_edge_src_int_func [| n; s' |] "" builder)
-          | _ -> ());
-         (match d with
-          | (A.Node(_,_), _) -> ignore (L.build_call set_edge_dest_int_func [| n; d' |] "" builder)
-          | _ -> ());
          (match w with
-          | (A.Int, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_int_func [| n; w' |] "" builder)
-          | (A.String, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_str_func [| n; w' |] "" builder)
-          | (A.Void, v) -> if v = SNull then () else ignore (L.build_call set_edge_w_void_func [| n; w' |] "" builder)
-          | _ -> ());
-         n
+         | (A.Int, SNull) -> ignore (L.build_call set_edge_w_int_func [| e; w'; L.const_int i1_t 0 |] "" builder)
+         | (A.Int, _) -> ignore (L.build_call set_edge_w_int_func [| e; w'; L.const_int i1_t 1 |] "" builder)
+         | (A.Bool, SNull) -> ignore (L.build_call set_edge_w_bool_func [| e; w'; L.const_int i1_t 0 |] "" builder)
+         | (A.Bool, _) -> ignore (L.build_call set_edge_w_bool_func [| e; w'; L.const_int i1_t 1 |] "" builder)
+         | (A.String, SNull) -> ignore (L.build_call set_edge_w_str_func [| e; w'; L.const_int i1_t 0 |] "" builder)
+         | (A.String, _) -> ignore (L.build_call set_edge_w_str_func [| e; w'; L.const_int i1_t 1 |] "" builder)
+         | _ -> () (* TODO *));
+         e
       | SNodeExpr (l, d) ->
          let l' = expr vars builder l in
          let d' = expr vars builder d in
          let n = L.build_call create_node_func [||] "create_node" builder in
          (match l with
           | (A.Int, _) -> ignore (L.build_call set_node_label_int_func [| n; l' |] "" builder)
+          | (A.Bool, _) -> ignore (L.build_call set_node_label_bool_func [| n; l' |] "" builder)
           | (A.String, _) -> ignore (L.build_call set_node_label_str_func [| n; l' |] "" builder)
-          | (A.Void, _) -> ignore (L.build_call set_node_label_void_func [| n; l' |] "" builder)
           | _ -> () (* TODO *));
          (match d with
           | (A.Int, v) ->
             if v = SNull
-            then ignore (L.build_call set_node_data_int_func [| n; L.const_int i32_t 0; L.const_int i32_t 0 |] "" builder)
-            else ignore (L.build_call set_node_data_int_func [| n; d'; L.const_int i32_t 1 |] "" builder)
+            then ignore (L.build_call set_node_data_int_func [| n; L.const_int i32_t 0; L.const_int i1_t 0 |] "" builder)
+            else ignore (L.build_call set_node_data_int_func [| n; d'; L.const_int i1_t 1 |] "" builder)
+          | (A.Bool, v) ->
+            if v = SNull
+            then ignore (L.build_call set_node_data_bool_func [| n; L.const_int i1_t 0; L.const_int i1_t 0 |] "" builder)
+            else ignore (L.build_call set_node_data_bool_func [| n; d'; L.const_int i1_t 1 |] "" builder)
           | (A.String, v) ->
             if v = SNull
-            then ignore (L.build_call set_node_data_str_func [| n; L.build_global_stringptr "" "str" builder; L.const_int i1_t 0 |] "" builder)
-            else ignore (L.build_call set_node_data_str_func [| n; d'; L.const_int i32_t 1 |] "" builder)
-          | (A.Void, v) ->
-            if v = SNull
-            then ()
-            else ignore (L.build_call set_node_data_void_func [| n; d' |] "" builder) (*Should void nodes always have has_val set to false?*)
+            then ignore (L.build_call set_node_data_str_func [| n; L.const_null str_t; L.const_int i1_t 0 |] "" builder)
+            else ignore (L.build_call set_node_data_str_func [| n; d'; L.const_int i1_t 1 |] "" builder)
           | _ -> () (* TODO *));
          n
       | SNull ->
-         L.const_null i32_t
+         (match ty with
+          | A.Int -> L.const_null i32_t
+          | A.Bool -> L.const_null i1_t
+          | A.String -> L.const_null str_t
+          | _ -> L.const_null void_ptr_t)
       | SNoexpr ->
          L.undef (L.void_type context) (* placeholder *)
     in
