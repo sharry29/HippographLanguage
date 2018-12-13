@@ -1,0 +1,37 @@
+int main() {
+    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(-2)> "B" -(1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(-1)>"C"; "D"-(-4)>"A"];
+
+    graph<string:int, int> shortest_paths = [];
+    bool valid = true;
+
+    for_node(n : g) {
+        node<string:int> n1 = n.name():999999;
+        shortest_paths.add_node(n1);
+    }
+
+    for_node(n : shortest_paths) {
+        for_edge(src, dst, w : g) {
+            int src_data = shortest_paths.get_data(src.name());
+            int dst_data = shortest_paths.get_data(dst.name());
+            if (src_data + w < dst_data) {
+                shortest_paths.set_data(dst.name(), src_data + w);
+                shortest_paths.set_edge(src.name(), dst.name(), 0);
+            }
+        }
+    }
+
+    for_edge(src, dst, w : g) {
+        int src_data = shortest_paths.get_data(src.name());
+        int dst_data = shortest_paths.get_data(dst.name());
+        if (src_data + w < dst_data) {
+            print("negative edge weight cycle");
+            valid = false;
+        }
+    }
+
+    if (valid) {
+        shortest_paths.print();
+    }
+
+    return 0;
+}
