@@ -1,0 +1,6 @@
+int main() {
+	int g = 0;
+	for_node(n : g) {
+	  print_int(1);
+	}
+}

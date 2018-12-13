@@ -27,8 +27,8 @@ and edge_list = sexpr list
 type sstmt =
 	  SExpr of sexpr
   | SFor of sexpr * sexpr * sexpr * sstmt
-	| SForNode of string * string * sstmt
-	| SForEdge of string * string * sstmt
+	| SForNode of string * sexpr * sstmt
+	| SForEdge of string * sexpr * sstmt
 	| SWhile of sexpr * sstmt
 	| SIf of sexpr * sstmt * sstmt
 	| SBlock of sstmt list
@@ -84,6 +84,10 @@ let rec string_of_sstmt = function
   | SFor(e1, e2, e3, s) ->
       "for (" ^ string_of_sexpr e1  ^ " ; " ^ string_of_sexpr e2 ^ " ; " ^
       string_of_sexpr e3  ^ ") " ^ string_of_sstmt s
+  | SForNode(n, g, s) ->
+      "for (" ^  n  ^ " : " ^ string_of_sexpr g ^ ") " ^ string_of_sstmt s
+  | SForEdge(e, g, s) ->
+      "for (" ^ e  ^ " : " ^ string_of_sexpr g ^ ") " ^ string_of_sstmt s
   | SWhile(e, s) -> "while (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
   | SVdecl(t, var, expr) -> 
       match expr with

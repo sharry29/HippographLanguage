@@ -96,6 +96,12 @@ let translate (globals, functions) =
   let get_edge_w_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_edge_w_func : L.llvalue = L.declare_function "get_edge_w" get_edge_w_t the_module in
 
+  let graph_to_iterable_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let graph_to_iterable_func : L.llvalue = L.declare_function "graph_to_iterable" graph_to_iterable_t the_module in
+
+  let get_graph_next_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_graph_next_node_func : L.llvalue = L.declare_function "get_graph_next_node" get_graph_next_node_t the_module in
+
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
       let name = sfdecl.sfname
@@ -308,9 +314,44 @@ let translate (globals, functions) =
         ignore (L.build_cond_br bool_val body_bb merge_bb p_builder);
         (vars, L.builder_at_end context merge_bb)
 
-
-        | SFor (e1, p, e2, body) -> stmt (vars, builder)
+      | SFor (e1, p, e2, body) -> stmt (vars, builder)
          (SBlock [SExpr e1 ; SWhile (p, SBlock [body ; SExpr e2]) ] )
+      | SForNode (n, g, body) ->
+        (match g with
+         | (A.Graph(lt, dt, _), _) ->
+           let graph_ptr = expr vars builder g in
+
+           (* allocate space for n, add to symbol table, and initially set to head of node linked list *)
+           let n_ptr = L.build_alloca (ltype_of_typ (A.Node(lt, dt))) n builder in
+           let vars = StringMap.add n n_ptr vars in
+           let hd_node = L.build_call graph_to_iterable_func [| graph_ptr |] "hd_node" builder in
+           ignore(L.build_store hd_node n_ptr builder);
+
+           (* create predicate block *)
+           let p_bb = L.append_block context "while" the_function in
+           ignore (L.build_br p_bb builder);
+
+           (* while body block *)
+           let body_bb = L.append_block context "while_body" the_function in
+           let body_builder = L.builder_at_end context body_bb in
+           let _, builder' = stmt (vars, body_builder) body in
+           (* change curr_node to be pointer to next node *)
+           let curr_node = L.build_load n_ptr "curr_node" builder' in
+           let next_node = L.build_call get_graph_next_node_func [| curr_node |] "next_node" builder' in
+           ignore(L.build_store next_node n_ptr builder');
+           add_terminal builder' (L.build_br p_bb);
+
+           (* define predicate *)
+           let p_builder = L.builder_at_end context p_bb in
+           let n_val = L.build_load n_ptr "node_tmp" p_builder in
+           let bool_val = L.build_is_not_null n_val "bool_val" p_builder in
+
+           (* merge *)
+           let merge_bb = L.append_block context "merge" the_function in
+           ignore (L.build_cond_br bool_val body_bb merge_bb p_builder);
+           (vars, L.builder_at_end context merge_bb)
+
+         | _ -> raise A.Unsupported_constructor)
     in
 
     let (_, builder) = stmt (local_vars, builder) (SBlock sfdecl.sbody) in

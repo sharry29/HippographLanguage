@@ -1,0 +1,6 @@
+int main() {
+	graph<int:int, int> g = [];
+	for_node(n : g) {
+	  print_int(n.get_data());
+	}
+}

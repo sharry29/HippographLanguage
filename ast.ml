@@ -54,8 +54,8 @@ and edge_list = expr list
 type stmt = 
   | Expr of expr
   | For of expr * expr * expr * stmt
-  | ForNode of string * string * stmt
-  | ForEdge of string * string * stmt
+  | ForNode of string * expr * stmt
+  | ForEdge of string * expr * stmt
   | While of expr * stmt
   | If of expr * stmt * stmt
   | Block of stmt list
@@ -149,6 +149,10 @@ let rec string_of_stmt = function
   | For(e1, e2, e3, s) ->
       "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
       string_of_expr e3  ^ ") " ^ string_of_stmt s
+  | ForNode(x, e2, s) ->
+      "for (" ^  x  ^ " : " ^ string_of_expr e2 ^ ") " ^ string_of_stmt s
+  | ForEdge(x, e2, s) ->
+      "for (" ^ x  ^ " : " ^ string_of_expr e2 ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
   | Vdecl(t, var, expr) -> 
       match expr with

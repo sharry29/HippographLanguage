@@ -100,6 +100,16 @@ void *create_node() {
   return (void *) n;
 }
 
+node *clone_node(node *n) {
+  if (n == NULL) return NULL;
+
+  node *n_cp = malloc(sizeof(node));
+  memcpy(n_cp, n, sizeof(node));
+  n_cp -> neighbor_list = NULL;
+  n_cp -> next = NULL;
+  return n_cp;
+}
+
 void set_node_label_int(node *n, int i) {
   if (n -> label != NULL) {
     free(n -> label);
@@ -251,6 +261,28 @@ void *create_graph() {
   g -> node_list = create_node_list();
   g -> edge_list = create_edge_list();
   return (void *) g;
+}
+
+/*
+  Given a graph, creates a linked list of copies of its nodes.
+  Used to enable node iteration (for_node) without side effects.
+*/
+node *graph_to_iterable(graph *g) {
+  node *curr_orig = g -> node_list -> hd;
+  node *curr_new = clone_node(curr_orig);
+  node *hd_new = curr_new;
+
+  while (curr_orig != NULL) {
+    curr_new -> next = clone_node(curr_orig -> next);
+    curr_orig = curr_orig -> next;
+    curr_new = curr_new -> next;
+  }
+
+  return hd_new;
+}
+
+node *get_graph_next_node(node *n) {
+  return n -> next;
 }
 
 node *get_node_by_label_int(graph *g, int label) {
