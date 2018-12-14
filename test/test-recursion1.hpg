@@ -1,0 +1,14 @@
+void count(int i) {
+	if (i <= 0) {
+		print_int(i);
+	} else {
+		print_int(i);
+		count(i - 1);
+	}
+	return;
+}
+
+int main() {
+	count(5);
+	return 0;
+}

@@ -1,0 +1,12 @@
+int main() {
+	print_int(fib(7));
+	return 0;
+}
+
+int fib(int i) {
+	if (i < 2) {
+	  return 1;
+	} else {
+	  return fib(i - 2) + fib(i - 1);
+	}
+}
