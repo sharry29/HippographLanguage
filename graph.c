@@ -556,3 +556,90 @@ int remove_edge(graph *g, edge *e) {
 
   return 0;
 }
+
+int remove_all_edges(graph *g, node *n) {
+  edge *curr_edge = g -> edge_list -> hd;
+  edge *temp;
+  while (curr_edge != NULL) {
+    temp = curr_edge->next;
+    if (n -> label_typ == INTTYPE || n -> label_typ == BOOLTYPE) {
+      if (*(int *) get_node_label(curr_edge -> src) == *(int *) get_node_label(n) || *(int *) get_node_label(curr_edge -> dst) == *(int *)get_node_label(n)) {
+        remove_edge(g, curr_edge);
+      }
+    }
+    if (n -> label_typ == STRTYPE) {
+      if ((char *) get_node_label(curr_edge -> src) == (char *)get_node_label(n) || (char *) get_node_label(curr_edge -> dst) == (char *)get_node_label(n)) {
+        remove_edge(g, curr_edge);
+      }
+    }
+    curr_edge = temp;
+  }
+  return 0;
+}
+
+
+int remove_node(graph *g, node *n) {
+  if (n->label_typ == INTTYPE || n->label_typ == BOOLTYPE) {
+    node *curr = g -> node_list -> hd;
+    while (curr != NULL) {
+      if ((curr -> label_typ == INTTYPE || curr -> label_typ == BOOLTYPE) && 
+        *(int *) get_node_label(curr->next) == *(int *)get_node_label(n)) {
+        curr -> next = curr -> next -> next;
+        remove_all_edges(g, n);
+        return 1;
+      }
+      curr = curr -> next;
+    }
+    return 0;
+  }
+  else if (n->label_typ == STRTYPE) {
+    node *curr = g -> node_list -> hd;
+    while (curr != NULL) {
+      if (curr -> label_typ == STRTYPE && strcmp((char *) get_node_label(curr), (char *)get_node_label(n)) == 0) {
+        curr->next = curr->next->next;
+        remove_all_edges(g, n);
+        return 1;
+      }
+      curr = curr -> next;
+    }
+  }
+  return 0;
+}
+
+int has_node_int(graph *g, int name) {
+  if (get_node_by_label_int(g, name)) {
+    return 1;
+  }
+  return 0;
+}
+
+int has_node_str(graph *g, char *name) {
+  if (get_node_by_label_str(g, name)) {
+    return 1;
+  }
+  return 0;
+}
+
+int are_neighbors_int(graph *g, int from_name, int to_name) {
+  edge *e = g -> edge_list -> hd;
+  while (e != NULL) {
+    if ((*(int *) get_node_label(e -> src) == from_name) && (*(int *) get_node_label(e -> dst) == to_name) ) {
+      return 1;
+    }
+    e = e -> next;
+  }
+  return 0;
+}
+
+int are_neighbors_str(graph *g, char *from_name, char *to_name) {
+  edge *e = g -> edge_list -> hd;
+  while (e != NULL) {
+    if (((char *) get_node_label(e -> src) == from_name) && ((char *) get_node_label(e -> dst) == to_name) ) {
+      return 1;
+    }
+    e = e -> next;
+  }
+  return 0;
+}
+
+graph *neighbors_int(int name, int level, int include_current)
