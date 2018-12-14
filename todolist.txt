@@ -11,14 +11,14 @@
         * has_node (ben, irina)
         * are_neighbors (ben, harry)
         * is_empty (ben, harry)
-        * print (yasu)
+        * print (ben, yasu)
         * neighbors (yasu)
         * find (yasu)
     + node
         * [DONE] get_data
         * [DONE] set_data
-        * name (yasu)
-        * print (yasu)
+        * [DONE] get_name (yasu)
+        * [DONE] print (yasu)
 - tests for the method calls (yasu)
 - implementing the method calls (irina)
 - clean up LRM style (ben)

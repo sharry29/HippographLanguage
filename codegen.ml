@@ -81,8 +81,17 @@ let translate (globals, functions) =
   let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i1_t |] in
   let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
 
+  let get_node_label_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_node_label_func : L.llvalue = L.declare_function "get_node_label" get_node_label_t the_module in
+
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
+
+  let print_node_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t |] in
+  let print_node_func : L.llvalue = L.declare_function "print_node" print_node_t the_module in
+
+  let print_graph_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t |] in
+  let print_graph_func : L.llvalue = L.declare_function "print_graph" print_graph_t the_module in
 
   let set_edge_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t |] in
   let set_edge_func : L.llvalue = L.declare_function "set_edge" set_edge_t the_module in
@@ -301,12 +310,20 @@ let translate (globals, functions) =
                | _ -> raise A.Unsupported_constructor) in
              L.build_call remove_edge_func [| g_ptr; e_ptr |] "remove_edge" builder
           | _ -> raise A.Unsupported_constructor)
+    | "get_name" ->
+         let n_ptr = expr vars builder e in
+         let ret = L.build_call get_node_label_func [| n_ptr |] "tmp_data" builder in
+         (match ty with
+         | A.String -> ret
+         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+         | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
     | "get_data" ->
          let n_ptr = expr vars builder e in
          let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
          (match ty with
          | A.String -> ret
-         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+         | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
     | "set_data" ->
          (match args with
           | ((dt, dv) as d) :: [] ->
@@ -327,6 +344,14 @@ let translate (globals, functions) =
                  else L.build_call set_node_data_str_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
               | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
+    | "print" ->
+         (match e with
+          | (Graph(_), _) ->
+             let g_ptr = expr vars builder e in
+             L.build_call print_graph_func [| g_ptr |] "" builder
+          | (Node(_), _) ->
+             let n_ptr = expr vars builder e in
+             L.build_call print_node_func [| n_ptr |] "" builder)
     (*| "set_edge" ->
          (* if not in graph already create new edge and add it
             else remove edge and add it again?*)

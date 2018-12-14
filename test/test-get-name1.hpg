@@ -1,0 +1,8 @@
+int main() {
+  node<int> n = 1;
+  print_int(n.get_name());
+  node<bool> n = true;
+  print_bool(n.get_name());
+  node<string> n = "foo";
+  print(n.get_name());
+}

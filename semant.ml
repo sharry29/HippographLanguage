@@ -68,12 +68,16 @@ let check (globals, funcs) =
               else { typ = wt; fname = s; args = []; body = [] }
             | _ ->
               raise Not_found)
-        | Node(_, dt) ->
+        | Node(lt, dt) ->
            (match s with
             | "get_data" ->
                { typ = dt; fname = s; args = []; body = [] }
             | "set_data" ->
                { typ = Void; fname = s; args = [(dt, "d")]; body = [] }
+            | "get_name" ->
+               { typ = lt; fname = s; args = []; body = [] }
+            | "print" ->
+               { typ = Void; fname = s; args = []; body = [] }
             | _ ->
                raise Not_found)
         | Graph(lt, dt, _) ->
@@ -82,6 +86,8 @@ let check (globals, funcs) =
               { typ = Int; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
           | "remove_edge" ->
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
+          | "print" ->
+             { typ = Void; fname = s; args = []; body = [] }
 (*           | "set_edge" ->
               { typ = Bool; fname = s; args = [(sname, dname, w), "x"]; body = [] } *)
           | _ -> raise Not_found)
@@ -164,11 +170,15 @@ let check (globals, funcs) =
       in
 
       match lvt, rvt, e' with
-      | Node(_), Node(_), _ ->
          (* If left expression is a node with bool type data, wrap right expression in a SNodeExpr *)
-         (check_asn lvt rvt err, SAsn(var, (rvt, e')))
-      | Node(nlt, Bool), _, _ ->
-         (check_asn nlt rvt err, SAsn(var, (lvt, SNodeExpr((rvt, e'), (Bool, SNull)))))
+      | Node(llt, ldt), _, SNodeExpr((lt, le), d) ->
+         let (dt, de) = coerce_null_to_typ ldt d in
+         let lt = check_asn llt lt err in
+         let dt = check_asn ldt dt err in
+         (Node(lt, dt), SAsn(var, (lvt, e')))
+      | Node(llt, ldt), _, _ ->
+         let lt = check_asn llt rvt err in
+         (Node(lt, ldt), SAsn(var, (lvt, SNodeExpr((llt, e'), (ldt, SNull)))))
       | Graph(llt, ldt, lwt), Graph(_, _, _), SGraphExpr(nl, el) ->
          (* Coerce (Bool, SNull) to correct type then check type equality *)
          let nl' = List.map (fun (_, e) -> match e with

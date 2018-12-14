@@ -667,16 +667,33 @@ int find_data_str(graph *g, char *data) {
   return 0;
 }
 
-char *print_node(node *n) {
-  char *x = strcat(strcat((char *)n->label, ":"), (char *)n->data);
-  printf("%s", x);
-  return x;
+void print_node(node *n) {
+  if (n -> label_typ == INTTYPE) {
+    printf("%d:", n -> label -> i);
+  } else if (n -> label_typ == BOOLTYPE) {
+    if (n -> label -> i == 0) printf("false:");
+    else printf("true:");
+  } else if (n -> label_typ == STRTYPE) {
+    printf("\"%s\":", n -> label -> s);
+  }
+
+  if (n -> has_val == 0) {
+    printf("null");
+  } else if (n -> data_typ == INTTYPE) {
+    printf("%d", n -> label -> i);
+  } else if (n -> data_typ == BOOLTYPE) {
+    if (n -> data -> i == 0) printf("false");
+    else printf("true");
+  } else if (n -> data_typ == STRTYPE) {
+    printf("\"%s\"", n -> data -> s);
+  }
+
 }
 
 char *print_edge(edge *e) {
-  char *x = strcat(strcat(strcat(strcat(print_node(e -> src), "-"), (char *) e -> w), ">"), print_node(e -> dst));
-  printf("%s", x);
-  return x;
+  // char *x = strcat(strcat(strcat(strcat(string_of_node(e -> src), "-"), (char *) e -> w), ">"), print_node(e -> dst));
+  // return x;
+  return NULL;
 }
 
 char *print_graph(graph *g) {
