@@ -381,6 +381,32 @@ node *get_node_by_label_str(graph *g, char *label) {
   return curr;
 }
 
+edge *get_edge_by_src_and_dst_int(graph *g, int src_label, int dst_label) {
+  edge *curr = g -> edge_list -> hd;
+  while (curr != NULL) {
+    if ((curr -> w_typ == INTTYPE || curr -> w_typ == BOOLTYPE) &&
+        get_edge_src(curr) -> label -> i == src_label &&
+        get_edge_dst(curr) -> label -> i == dst_label) {
+      return curr;
+    }
+    curr = curr -> next;
+  }
+  return curr;
+}
+
+edge *get_edge_by_src_and_dst_str(graph *g, char *src_label, char *dst_label) {
+  edge *curr = g -> edge_list -> hd;
+  while (curr != NULL) {
+    if (curr -> w_typ == STRTYPE &&
+        strcmp((char *) (get_edge_src(curr) -> label -> s), src_label) == 0 &&
+        strcmp((char *) (get_edge_dst(curr) -> label -> s), dst_label) == 0) {
+      return curr;
+    }
+    curr = curr -> next;
+  }
+  return curr;
+}
+
 int add_neighbor(node *n, edge *e) {
   if (n != e -> src) return -1;
 
