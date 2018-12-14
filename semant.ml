@@ -68,16 +68,12 @@ let check (globals, funcs) =
               else { typ = wt; fname = s; args = []; body = [] }
             | _ ->
               raise Not_found)
-        | Node(lt, dt) ->
+        | Node(_, dt) ->
            (match s with
             | "get_data" ->
-               if dt = Void
-               then raise (Failure ("node data type is void"))
-               else { typ = dt; fname = s; args = []; body = [] }
-            | "data" ->
-               if dt = Void
-               then raise (Failure ("node data type is void"))
-               else { typ = Void; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
+               { typ = dt; fname = s; args = []; body = [] }
+            | "set_data" ->
+               { typ = Void; fname = s; args = [(dt, "d")]; body = [] }
             | _ ->
                raise Not_found)
         | Graph(lt, dt, _) ->

@@ -307,6 +307,26 @@ let translate (globals, functions) =
          (match ty with
          | A.String -> ret
          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+    | "set_data" ->
+         (match args with
+          | ((dt, dv) as d) :: [] ->
+             let n_ptr = expr vars builder e in
+             let d_ptr = expr vars builder d in
+             (match dt with
+              | A.Int ->
+                 if dv = SNull
+                 then L.build_call set_node_data_int_func [| n_ptr; L.const_int i32_t 0; L.const_int i1_t 0 |] "" builder
+                 else L.build_call set_node_data_int_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
+              | A.Bool ->
+                 if dv = SNull
+                 then L.build_call set_node_data_bool_func [| n_ptr; L.const_int i1_t 0; L.const_int i1_t 0 |] "" builder
+                 else L.build_call set_node_data_bool_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
+              | A.String ->
+                 if dv = SNull
+                 then L.build_call set_node_data_str_func [| n_ptr; L.const_null str_t; L.const_int i1_t 0 |] "" builder
+                 else L.build_call set_node_data_str_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
+              | _ -> raise A.Unsupported_constructor)
+          | _ -> raise A.Unsupported_constructor)
     (*| "set_edge" ->
          (* if not in graph already create new edge and add it
             else remove edge and add it again?*)
