@@ -191,8 +191,8 @@ let translate (globals, functions) =
          let actuals = List.rev (List.map (expr vars builder) (List.rev act)) in
          let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
          L.build_call fdef (Array.of_list actuals) result builder
-      | SMCall (e, s, []) ->
-         handle_mcall_expr e s
+      | SMCall (e, s, args) ->
+         handle_mcall_expr vars ty e args s
       | SAsn (s, (t, v)) ->
          (* If e is SNull, change to default value for type s *)
          let v = match v with
@@ -264,7 +264,7 @@ let translate (globals, functions) =
       | SNoexpr ->
          L.undef (L.void_type context) (* placeholder *)
     
-    and handle_mcall_expr e = function
+    and handle_mcall_expr vars ty e args = function
     | "get_data" ->
          let n_ptr = expr vars builder e in
          let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
