@@ -450,16 +450,41 @@ void *add_edge_str(graph *g, edge *e, char *src, char *dst) {
 int add_node(graph *g, node *n) {
   if (g -> node_list -> hd == NULL) {
     g -> node_list -> hd = n;
-  } else if (g -> node_list -> hd == n) {
+  } else if (cmp_node_label(g -> node_list -> hd, n)) {
     return -1;
   } else {
     node *curr = g -> node_list -> hd;
     while (curr -> next != NULL) {
-      if (curr -> next == n) return -1;
+      if (cmp_node_label(curr -> next, n)) return -1;
       curr = curr -> next;
     }
     curr -> next = n;
   }
+  return 0;
+}
+
+int graph_set_node(graph *g, node *n) {
+  // try adding node; handle if node w/ name already exists in the graph
+  if (add_node(g, n) < 0 && n -> has_val) {
+    int lt = n -> label_typ;
+    int dt = n -> data_typ;
+    node *n_in_g;
+
+    // find the node in the graph
+    if (lt == INTTYPE || lt == BOOLTYPE) {
+      n_in_g = get_node_by_label_int(g, n -> label -> i);
+    } else {
+      n_in_g = get_node_by_label_str(g, n -> label -> s);
+    }
+
+    // set its data to the data of n
+    if (dt == INTTYPE || dt == BOOLTYPE) {
+      set_node_data_int(n_in_g, n -> data -> i, 1);
+    } else if (dt == STRTYPE) {
+      set_node_data_str(n_in_g, n -> data -> s, 1);
+    }
+  }
+
   return 0;
 }
 

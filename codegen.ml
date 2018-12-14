@@ -117,6 +117,9 @@ let translate (globals, functions) =
   let get_graph_next_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_graph_next_edge_func : L.llvalue = L.declare_function "get_graph_next_edge" get_graph_next_edge_t the_module in
 
+  let graph_set_node_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t; void_ptr_t |] in
+  let graph_set_node_func : L.llvalue = L.declare_function "graph_set_node" graph_set_node_t the_module in
+
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
       let name = sfdecl.sfname
@@ -192,7 +195,7 @@ let translate (globals, functions) =
          let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
          L.build_call fdef (Array.of_list actuals) result builder
       | SMCall (e, s, args) ->
-         handle_mcall_expr vars ty e args s
+         handle_mcall_expr vars builder ty e args s
       | SAsn (s, (t, v)) ->
          (* If e is SNull, change to default value for type s *)
          let v = match v with
@@ -264,7 +267,14 @@ let translate (globals, functions) =
       | SNoexpr ->
          L.undef (L.void_type context) (* placeholder *)
     
-    and handle_mcall_expr vars ty e args = function
+    and handle_mcall_expr vars builder ty e args = function
+    | "set_node" ->
+         (match args with
+          | ((A.Node(_), _) as n) :: [] ->
+            let g_ptr = expr vars builder e in
+            let n_ptr = expr vars builder n in
+            L.build_call graph_set_node_func [| g_ptr; n_ptr |] "tmp_data" builder        
+          | _ -> raise A.Unsupported_constructor)
     | "get_data" ->
          let n_ptr = expr vars builder e in
          let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
