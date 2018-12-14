@@ -191,18 +191,8 @@ let translate (globals, functions) =
          let actuals = List.rev (List.map (expr vars builder) (List.rev act)) in
          let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
          L.build_call fdef (Array.of_list actuals) result builder
-      | SMCall (n, "get_data", []) ->
-         let n_ptr = expr vars builder n in
-         let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
-         (match ty with
-         | A.String -> ret
-         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
-      | SMCall (n, "weight", []) ->
-         let n_ptr = expr vars builder n in
-         (match ty with
-          | A.Int -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
-          | A.Bool -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
-          | A.String -> L.build_call get_edge_w_str_func [| n_ptr |] "tmp_data" builder)
+      | SMCall (e, s, []) ->
+         handle_mcall_expr e s
       | SAsn (s, (t, v)) ->
          (* If e is SNull, change to default value for type s *)
          let v = match v with
@@ -273,6 +263,20 @@ let translate (globals, functions) =
           | _ -> L.const_null void_ptr_t)
       | SNoexpr ->
          L.undef (L.void_type context) (* placeholder *)
+    
+    and handle_mcall_expr e = function
+    | "get_data" ->
+         let n_ptr = expr vars builder e in
+         let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
+         (match ty with
+         | A.String -> ret
+         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+    | "weight" ->
+         let n_ptr = expr vars builder e in
+         (match ty with
+          | A.Int -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
+          | A.Bool -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
+          | A.String -> L.build_call get_edge_w_str_func [| n_ptr |] "tmp_data" builder)
     in
  
     let add_terminal builder instr =

@@ -108,6 +108,17 @@ void *create_node() {
   return (void *) n;
 }
 
+int cmp_node_label(node *n1, node *n2) {
+  int lt = n1 -> label_typ;
+  if (lt == INTTYPE || lt == BOOLTYPE) {
+    return n1 -> label -> i == n2 -> label -> i;
+  } else if (lt == STRTYPE) {
+    return strcmp(n1 -> label -> s, n2 -> label -> s);
+  } else {
+    return -1;
+  }
+}
+
 node *clone_node(node *n) {
   if (n == NULL) return NULL;
 
@@ -200,6 +211,17 @@ void *get_node_data(node *n) {
 }
 
 /* EDGES */
+
+int cmp_edge_weight(edge *e1, edge *e2) {
+  int lt = e1 -> w_typ;
+  if (lt == INTTYPE || lt == BOOLTYPE) {
+    return e1 -> w -> i == e2 -> w -> i;
+  } else if (lt == STRTYPE) {
+    return strcmp(e1 -> w -> s, e2 -> w -> s);
+  } else {
+    return -1;
+  }
+}
 
 void set_edge_w_int(edge *e, int i, int has_val) {
   if (e -> w != NULL) {

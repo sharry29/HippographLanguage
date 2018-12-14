@@ -80,6 +80,11 @@ let check (globals, funcs) =
                else { typ = Void; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
             | _ ->
                raise Not_found)
+        | Graph(lt, dt, _) ->
+          (match s with
+          | "set_node" ->
+              { typ = Bool; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
+          | _ -> raise Not_found)
         | _ -> raise Not_found
     with Not_found -> raise (Failure ("unrecognized method " ^ string_of_typ libtyp ^ "." ^ s))
   in
