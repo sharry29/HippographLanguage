@@ -642,4 +642,47 @@ int are_neighbors_str(graph *g, char *from_name, char *to_name) {
   return 0;
 }
 
-graph *neighbors_int(int name, int level, int include_current)
+int is_empty(graph *g) {
+  if (g -> node_list -> hd) {
+    return 0;
+  }
+  return 1;
+}
+
+int neighbors_int_name(graph *g, int name, int level, int include_current) {
+
+}
+
+int neighbors_str_name(graph *g, char *name, int level, int include_current) {
+
+}
+
+int find_data_int(graph *g, int data) {
+
+}
+
+int find_data_str(graph *g, char *data) {
+
+}
+
+char *print_node(node *n) {
+  char *x = strcat(strcat((char *)n->label, ":"), (char *)n->data);
+  printf(x);
+  return x;
+}
+
+char *print_edge(edge *e) {
+  char *x = strcat(strcat(strcat(strcat(print_node(e -> src), "-"), (char *) e -> w), ">"), print_node(e -> dst));
+  printf(x);
+  return x;
+}
+
+char *print_graph(graph *g) {
+  edge *e = g -> edge_list -> hd;
+  char *x;
+  while (e) {
+    strcat(x, print_edge(e));
+    e = e -> next;
+  }
+  return x;
+}
