@@ -1,0 +1,7 @@
+int main() {
+  int g = 0;
+  for_edge(src, dst, w : g) {
+    print("foo");
+  }
+  return 0;
+}

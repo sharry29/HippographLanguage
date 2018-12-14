@@ -74,6 +74,14 @@ void *create_prim_str(char *s) {
   return (void *) p;
 }
 
+primitive *clone_primitive(primitive *p) {
+  if (p == NULL) return NULL;
+
+  primitive *p_cp = (primitive *) malloc(sizeof(primitive));
+  memcpy(p_cp, p, sizeof(primitive));
+  return p_cp;
+}
+
 /* NODES */
 
 void *create_neighbor_list_item(edge *e) {
@@ -103,8 +111,10 @@ void *create_node() {
 node *clone_node(node *n) {
   if (n == NULL) return NULL;
 
-  node *n_cp = malloc(sizeof(node));
+  node *n_cp = (node *) malloc(sizeof(node));
   memcpy(n_cp, n, sizeof(node));
+  n_cp -> label = clone_primitive(n -> label);
+  n_cp -> data = clone_primitive(n -> data);
   n_cp -> neighbor_list = NULL;
   n_cp -> next = NULL;
   return n_cp;
@@ -218,18 +228,26 @@ void set_edge_w_str(edge *e, char *s, int has_val) {
   e -> w_typ = STRTYPE;
 }
 
-void *get_edge_w(edge *e) {
-  int typ = e -> w_typ;
-  void *w = NULL;
+node *get_edge_src(edge *e) {
+  if (e == NULL) return NULL;
 
-  if (typ == INTTYPE || typ == BOOLTYPE) {
-    w = (void *) &(e -> w -> i);
-  } else if (typ == STRTYPE) {
-    w = (void *) e -> w -> s;
-  } else if (typ == VOIDTYPE) {
-    w = (void *) e -> w -> v;
-  }
-  return w;  // not guaranteed to return valid value if not has_val
+  return e -> src;
+}
+
+node *get_edge_dst(edge *e) {
+  if (e == NULL) return NULL;
+
+  return e -> dst;
+}
+
+int get_edge_w_int(edge *e) {
+  if (e == NULL || e -> has_val == 0) return 0;
+  return e -> w -> i;
+}
+
+char *get_edge_w_str(edge *e) {
+  if (e == NULL || e -> has_val == 0) return 0;
+  return e -> w -> s;
 }
 
 void *create_edge() {
@@ -240,6 +258,18 @@ void *create_edge() {
   e -> next = NULL;
   e -> has_val = 0;
   return e;
+}
+
+edge *clone_edge(edge *e) {
+  if (e == NULL) return NULL;
+  edge *e_cp = (edge *) malloc(sizeof(edge));
+  memcpy(e_cp, e, sizeof(edge));
+  e_cp -> src = clone_node(e -> src);
+  e_cp -> dst = clone_node(e -> dst);
+  e_cp -> has_val = e -> has_val;
+  e_cp -> w = clone_primitive(e -> w);
+  e_cp -> next = NULL;
+  return e_cp;
 }
 
 /* GRAPHS */
@@ -267,7 +297,7 @@ void *create_graph() {
   Given a graph, creates a linked list of copies of its nodes.
   Used to enable node iteration (for_node) without side effects.
 */
-node *graph_to_iterable(graph *g) {
+node *graph_to_node_iterable(graph *g) {
   node *curr_orig = g -> node_list -> hd;
   node *curr_new = clone_node(curr_orig);
   node *hd_new = curr_new;
@@ -281,8 +311,30 @@ node *graph_to_iterable(graph *g) {
   return hd_new;
 }
 
+/*
+  Given a graph, creates a linked list of copies of its edges.
+  Used to enable edge iteration (for_edge) without side effects.
+*/
+edge *graph_to_edge_iterable(graph *g) {
+  edge *curr_orig = g -> edge_list -> hd;
+  edge *curr_new = clone_edge(curr_orig);
+  edge *hd_new = curr_new;
+
+  while (curr_orig != NULL) {
+    curr_new -> next = clone_edge(curr_orig -> next);
+    curr_orig = curr_orig -> next;
+    curr_new = curr_new -> next;
+  }
+
+  return hd_new;
+}
+
 node *get_graph_next_node(node *n) {
   return n -> next;
+}
+
+edge *get_graph_next_edge(edge *e) {
+  return e -> next;
 }
 
 node *get_node_by_label_int(graph *g, int label) {
@@ -344,9 +396,7 @@ int add_edge_to_edge_list(edge *e, edge_list *el) {
 void *add_edge_int(graph *g, edge *e, int src, int dst) {
   e -> src = get_node_by_label_int(g, src);
   e -> dst = get_node_by_label_int(g, dst);
-  e -> w = NULL;
   e -> next = NULL;
-  e -> has_val = 0;
 
   // add to neighbors
   if (e -> src == NULL || e -> dst == NULL ||

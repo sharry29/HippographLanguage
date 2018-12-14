@@ -93,14 +93,29 @@ let translate (globals, functions) =
   let set_edge_w_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i1_t |] in
   let set_edge_w_str_func : L.llvalue = L.declare_function "set_edge_w_str" set_edge_w_str_t the_module in
 
-  let get_edge_w_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
-  let get_edge_w_func : L.llvalue = L.declare_function "get_edge_w" get_edge_w_t the_module in
+  let get_edge_src_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_edge_src_func : L.llvalue = L.declare_function "get_edge_src" get_edge_src_t the_module in
 
-  let graph_to_iterable_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
-  let graph_to_iterable_func : L.llvalue = L.declare_function "graph_to_iterable" graph_to_iterable_t the_module in
+  let get_edge_dst_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_edge_dst_func : L.llvalue = L.declare_function "get_edge_dst" get_edge_dst_t the_module in
+
+  let get_edge_w_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t |] in
+  let get_edge_w_int_func : L.llvalue = L.declare_function "get_edge_w_int" get_edge_w_int_t the_module in
+
+  let get_edge_w_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_edge_w_str_func : L.llvalue = L.declare_function "get_edge_w_str" get_edge_w_str_t the_module in
+
+  let graph_to_node_iterable_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let graph_to_node_iterable_func : L.llvalue = L.declare_function "graph_to_node_iterable" graph_to_node_iterable_t the_module in
+
+  let graph_to_edge_iterable_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let graph_to_edge_iterable_func : L.llvalue = L.declare_function "graph_to_edge_iterable" graph_to_edge_iterable_t the_module in
 
   let get_graph_next_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_graph_next_node_func : L.llvalue = L.declare_function "get_graph_next_node" get_graph_next_node_t the_module in
+
+  let get_graph_next_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_graph_next_edge_func : L.llvalue = L.declare_function "get_graph_next_edge" get_graph_next_edge_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -184,11 +199,10 @@ let translate (globals, functions) =
          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder);
       | SMCall (n, "weight", []) ->
          let n_ptr = expr vars builder n in
-         let ret = L.build_call get_edge_w_func [| n_ptr |] "tmp_data" builder in
          (match ty with
-          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
-          | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
-          | A.String -> ret)
+          | A.Int -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
+          | A.Bool -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
+          | A.String -> L.build_call get_edge_w_str_func [| n_ptr |] "tmp_data" builder)
       | SAsn (s, (t, v)) ->
          (* If e is SNull, change to default value for type s *)
          let v = match v with
@@ -324,7 +338,7 @@ let translate (globals, functions) =
            (* allocate space for n, add to symbol table, and initially set to head of node linked list *)
            let n_ptr = L.build_alloca (ltype_of_typ (A.Node(lt, dt))) n builder in
            let vars = StringMap.add n n_ptr vars in
-           let hd_node = L.build_call graph_to_iterable_func [| graph_ptr |] "hd_node" builder in
+           let hd_node = L.build_call graph_to_node_iterable_func [| graph_ptr |] "hd_node" builder in
            ignore(L.build_store hd_node n_ptr builder);
 
            (* create predicate block *)
@@ -350,7 +364,62 @@ let translate (globals, functions) =
            let merge_bb = L.append_block context "merge" the_function in
            ignore (L.build_cond_br bool_val body_bb merge_bb p_builder);
            (vars, L.builder_at_end context merge_bb)
+         | _ -> raise A.Unsupported_constructor)
+      | SForEdge (src, dst, w, g, body) ->
+        (match g with
+         | (A.Graph(lt, dt, wt), _) ->
+           let graph_ptr = expr vars builder g in
 
+           (* allocate space for edge variables, add to symbol table, and initially set to head of edge linked list *)
+           let edge_ptr = L.build_alloca void_ptr_t "edge" builder in
+           let src_ptr = L.build_alloca (ltype_of_typ (A.Node(lt, dt))) "src" builder in
+           let dst_ptr = L.build_alloca (ltype_of_typ (A.Node(lt, dt))) "dst" builder in
+           let w_ptr = L.build_alloca (ltype_of_typ wt) "w" builder in
+           let vars = StringMap.add src src_ptr (StringMap.add dst dst_ptr (StringMap.add w w_ptr vars)) in
+           let hd_edge = L.build_call graph_to_edge_iterable_func [| graph_ptr |] "hd_edge" builder in
+           let hd_edge_src = L.build_call get_edge_src_func [| hd_edge |] "hd_edge_src" builder in
+           let hd_edge_dst = L.build_call get_edge_dst_func [| hd_edge |] "hd_edge_dst" builder in
+           let hd_edge_w = (match wt with
+            | A.Int -> L.build_call get_edge_w_int_func [| hd_edge |] "hd_edge_w" builder
+            | A.Bool -> L.build_call get_edge_w_int_func [| hd_edge |] "hd_edge_w" builder
+            | A.String -> L.build_call get_edge_w_str_func [| hd_edge |] "hd_edge_w" builder) in
+           ignore(L.build_store hd_edge edge_ptr builder);
+           ignore(L.build_store hd_edge_src src_ptr builder);
+           ignore(L.build_store hd_edge_dst dst_ptr builder);
+           ignore(L.build_store hd_edge_w w_ptr builder);
+
+           (* create predicate block *)
+           let p_bb = L.append_block context "while" the_function in
+           ignore (L.build_br p_bb builder);
+
+           (* while body block *)
+           let body_bb = L.append_block context "while_body" the_function in
+           let body_builder = L.builder_at_end context body_bb in
+           let _, builder' = stmt (vars, body_builder) body in
+           (* change curr_edge to be pointer to next edge *)
+           let curr_edge = L.build_load edge_ptr "curr_edge" builder' in
+           let next_edge = L.build_call get_graph_next_edge_func [| curr_edge |] "next_edge" builder' in
+           let next_edge_src = L.build_call get_edge_src_func [| next_edge |] "next_edge_src" builder' in
+           let next_edge_dst = L.build_call get_edge_dst_func [| next_edge |] "next_edge_dst" builder' in
+           let next_edge_w = (match wt with
+            | A.Int -> L.build_call get_edge_w_int_func [| next_edge |] "next_edge_w" builder'
+            | A.Bool -> L.build_call get_edge_w_int_func [| next_edge |] "next_edge_w" builder'
+            | A.String -> L.build_call get_edge_w_str_func [| next_edge |] "next_edge_w" builder') in
+           ignore(L.build_store next_edge edge_ptr builder');
+           ignore(L.build_store next_edge_src src_ptr builder');
+           ignore(L.build_store next_edge_dst dst_ptr builder');
+           ignore(L.build_store next_edge_w w_ptr builder');
+           add_terminal builder' (L.build_br p_bb);
+
+           (* define predicate *)
+           let p_builder = L.builder_at_end context p_bb in
+           let e_val = L.build_load edge_ptr "edge_tmp" p_builder in
+           let bool_val = L.build_is_not_null e_val "bool_val" p_builder in
+
+           (* merge *)
+           let merge_bb = L.append_block context "merge" the_function in
+           ignore (L.build_cond_br bool_val body_bb merge_bb p_builder);
+           (vars, L.builder_at_end context merge_bb)
          | _ -> raise A.Unsupported_constructor)
     in
 

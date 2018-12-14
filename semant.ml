@@ -323,9 +323,14 @@ let check (globals, funcs) =
               let (_, st') = check_stmt vars' st in
               (vars', SForNode (n, ge, st'))
            | (ty, _) -> raise (Failure ("illegal argument found: expected graph, got " ^ string_of_typ ty)))
-      | ForEdge (e, g, st) ->
-          let (_, st') = check_stmt vars st in
-          (vars, SForEdge (e, expr vars g, st'))
+      | ForEdge (src, dst, w, g, st) ->
+          (match expr vars g with
+           | (Graph(lt, dt, wt), _) as ge ->
+              let nt = Node(lt, dt) in
+              let vars' = StringMap.add src nt (StringMap.add dst nt (StringMap.add w wt vars)) in
+              let (_, st') = check_stmt vars' st in
+              (vars', SForEdge (src, dst, w, ge, st'))
+           | (ty, _) -> raise (Failure ("illegal argument found: expected graph, got " ^ string_of_typ ty)))
       | While (p, st) ->
           let (_, st') = check_stmt vars st in
           (vars, SWhile (check_bool_expr vars p, st'))
