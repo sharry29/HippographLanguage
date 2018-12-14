@@ -1,0 +1,4 @@
+int main() {
+	graph<int, int> g = [1 <(10)> 2; 3];
+	g.remove_edge(1; "foo");
+}

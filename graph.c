@@ -515,6 +515,8 @@ int graph_set_node(graph *g, node *n) {
 }
 
 int remove_edge(graph *g, edge *e) {
+  if (e == NULL) return -1;
+
   // remove from edge list
   edge *curr_e = g -> edge_list -> hd;
   if (curr_e != NULL && curr_e == e) {
@@ -650,30 +652,30 @@ int is_empty(graph *g) {
 }
 
 int neighbors_int_name(graph *g, int name, int level, int include_current) {
-
+  return 0;
 }
 
 int neighbors_str_name(graph *g, char *name, int level, int include_current) {
-
+  return 0;
 }
 
 int find_data_int(graph *g, int data) {
-
+  return 0;
 }
 
 int find_data_str(graph *g, char *data) {
-
+  return 0;
 }
 
 char *print_node(node *n) {
   char *x = strcat(strcat((char *)n->label, ":"), (char *)n->data);
-  printf(x);
+  printf("%s", x);
   return x;
 }
 
 char *print_edge(edge *e) {
   char *x = strcat(strcat(strcat(strcat(print_node(e -> src), "-"), (char *) e -> w), ">"), print_node(e -> dst));
-  printf(x);
+  printf("%s", x);
   return x;
 }
 

@@ -1,0 +1,1 @@
+Fatal error: exception Failure("illegal assignment string = int in ret = g.remove_edge(1, 2)")
