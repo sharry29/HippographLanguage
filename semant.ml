@@ -84,6 +84,8 @@ let check (globals, funcs) =
           (match s with
           | "set_node" ->
               { typ = Bool; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
+          | "set_edge" ->
+              { typ = Bool; fname = s; args = [(sname, dname, w), "x"]; body = [] }
           | _ -> raise Not_found)
         | _ -> raise Not_found
     with Not_found -> raise (Failure ("unrecognized method " ^ string_of_typ libtyp ^ "." ^ s))
