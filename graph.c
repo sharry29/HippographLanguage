@@ -700,15 +700,22 @@ node *dequeue(queue *Q) {
   }
 }
 
-void add_neighbors_of_node_to_graph(graph *g_new, node *n_orig, int level) {
+void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, int level) {
   if (level == 0) return;
 
   queue *Q = create_queue();
 
   neighbor_list_item *nli = n_orig -> neighbor_list -> hd;
   while (nli != NULL) {
-    // Try to find node with same label as neighbor in g_new
     node *neighbor = nli -> edge -> dst;
+
+    // Don't include neighbor if it is the root node
+    if (neighbor == n_root) {
+      nli = nli -> next;
+      continue;
+    }
+
+    // Try to find node with same label as neighbor in g_new
     node *neighbor_copy;
     if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
       neighbor_copy = get_node_by_label_int(g_new, neighbor -> label -> i);
@@ -743,7 +750,7 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_orig, int level) {
   }
 
   while (Q -> tl != NULL) {
-    add_neighbors_of_node_to_graph(g_new, dequeue(Q), level - 1);
+    add_neighbors_of_node_to_graph(g_new, n_root, dequeue(Q), level - 1);
   }
 
   free(Q);
@@ -757,9 +764,10 @@ graph *neighbors(node *n, int level, int include_current) {
 
   if (include_current != 0) {
     add_node(g_new, clone_node(n));
+    add_neighbors_of_node_to_graph(g_new, NULL, n, level);
+  } else {
+    add_neighbors_of_node_to_graph(g_new, n, n, level);
   }
-
-  add_neighbors_of_node_to_graph(g_new, n, level);
 
   return g_new;
 }
