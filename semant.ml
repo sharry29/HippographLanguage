@@ -85,9 +85,7 @@ let check (globals, funcs) =
           | "set_node" ->
               { typ = Int; fname = s; args = [(Node(st, wt), "x")]; body = [] }
           | "set_edge" ->
-              if st = dt
-              then { typ = Int; fname = s; args = [(st, "src"); (st, "dst"); (wt, "w")]; body = [] }
-              else raise (Failure ("edge-graph type mismatch"))
+              { typ = Int; fname = s; args = [(st, "src"); (st, "dst"); (wt, "w")]; body = [] }
           | "remove_edge" ->
               { typ = Int; fname = s; args = [(st, "src"); (st, "dst")]; body = [] }
           | "print" ->
