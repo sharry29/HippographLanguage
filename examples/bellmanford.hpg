@@ -11,12 +11,12 @@ int main() {
 
     for_node(n : shortest_paths) {
         for_edge(src, dst, w : g) {
-            int src_data = src.get_data(); (* all get_data were graph methods initially *)
+            int src_data = src.get_data();
             int dst_data = dst.get_data();
             if (src_data + w < dst_data) {
                 dst.set_data(src_data + w);
                 shortest_paths.set_node(dst);
-                shortest_paths.set_edge(src; dst; 0);
+                shortest_paths.set_edge(src.get_name(); dst.get_name(); 0);
             }
         }
     }
