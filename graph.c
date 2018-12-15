@@ -514,26 +514,6 @@ int graph_set_node(graph *g, node *n) {
   return 0;
 }
 
-int graph_set_edge_int_int(graph *g, int src_label, int dst_label, int w) {
-  edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
-  if (add_edge_int(g, e, src_label, dst_label) == NULL) {
-    remove_edge(g, e);
-    add_edge_int(g, e, src_label, dst_label);
-  }
-
-  return 0;
-}
-
-int graph_set_edge_str_int(graph *g, char *src_label, char *dst_label, int w) {
-  edge *e = get_edge_by_src_and_dst_str(g, src_label, dst_label);
-  if (add_edge_str(g, e, src_label, dst_label) == NULL) {
-    remove_edge(g, e);
-    add_edge_str(g, e, src_label, dst_label);
-  }
-
-  return 0;
-}
-
 int remove_edge(graph *g, edge *e) {
   if (e == NULL) return -1;
 
@@ -575,6 +555,36 @@ int remove_edge(graph *g, edge *e) {
   // free
   free(e);
   e = NULL;
+
+  return 0;
+}
+
+int graph_set_edge_int_int(graph *g, int src_label, int dst_label, int w) {
+  edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
+  if (add_edge_int(g, e, src_label, dst_label) == NULL) {
+    remove_edge(g, e);
+    add_edge_int(g, e, src_label, dst_label);
+  }
+
+  return 0;
+}
+
+int graph_set_edge_str_int(graph *g, char *src_label, char *dst_label, int w) {
+  edge *e = get_edge_by_src_and_dst_str(g, src_label, dst_label);
+  if (add_edge_str(g, e, src_label, dst_label) == NULL) {
+    remove_edge(g, e);
+    add_edge_str(g, e, src_label, dst_label);
+  }
+
+  return 0;
+}
+
+int graph_set_edge_int_str(graph *g, int src_label, int dst_label, char *w) {
+  edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
+  if (add_edge_int(g, e, src_label, dst_label) == NULL) {
+    remove_edge(g, e);
+    add_edge_int(g, e, src_label, dst_label);
+  }
 
   return 0;
 }
