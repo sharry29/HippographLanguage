@@ -71,13 +71,13 @@ let check (globals, funcs) =
         | Node(lt, dt) ->
            (match s with
             | "get_data" ->
-               if dt = Void
-               then raise (Failure ("node data type is void"))
-               else { typ = dt; fname = s; args = []; body = [] }
-            | "data" ->
-               if dt = Void
-               then raise (Failure ("node data type is void"))
-               else { typ = Void; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
+               { typ = dt; fname = s; args = []; body = [] }
+            | "set_data" ->
+               { typ = Void; fname = s; args = [(dt, "d")]; body = [] }
+            | "get_name" ->
+               { typ = lt; fname = s; args = []; body = [] }
+            | "print" ->
+               { typ = Void; fname = s; args = []; body = [] }
             | _ ->
                raise Not_found)
         | Graph(st, dt, wt) ->
@@ -88,6 +88,11 @@ let check (globals, funcs) =
               if st = dt
               then { typ = Bool; fname = s; args = [(Graph(st, st, wt), "s")]; body = [] }
               else raise (Failure ("edge-graph type mismatch"))
+              { typ = Int; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
+          | "remove_edge" ->
+              { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
+          | "print" ->
+             { typ = Void; fname = s; args = []; body = [] }
           | _ -> raise Not_found)
         | _ -> raise Not_found
     with Not_found -> raise (Failure ("unrecognized method " ^ string_of_typ libtyp ^ "." ^ s))
@@ -168,11 +173,15 @@ let check (globals, funcs) =
       in
 
       match lvt, rvt, e' with
-      | Node(_), Node(_), _ ->
          (* If left expression is a node with bool type data, wrap right expression in a SNodeExpr *)
-         (check_asn lvt rvt err, SAsn(var, (rvt, e')))
-      | Node(nlt, Bool), _, _ ->
-         (check_asn nlt rvt err, SAsn(var, (lvt, SNodeExpr((rvt, e'), (Bool, SNull)))))
+      | Node(llt, ldt), _, SNodeExpr((lt, le), d) ->
+         let (dt, de) = coerce_null_to_typ ldt d in
+         let lt = check_asn llt lt err in
+         let dt = check_asn ldt dt err in
+         (Node(lt, dt), SAsn(var, (lvt, e')))
+      | Node(llt, ldt), _, _ ->
+         let lt = check_asn llt rvt err in
+         (Node(lt, ldt), SAsn(var, (lvt, SNodeExpr((llt, e'), (ldt, SNull)))))
       | Graph(llt, ldt, lwt), Graph(_, _, _), SGraphExpr(nl, el) ->
          (* Coerce (Bool, SNull) to correct type then check type equality *)
          let nl' = List.map (fun (_, e) -> match e with
