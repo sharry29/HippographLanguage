@@ -1,0 +1,6 @@
+int main() {
+	graph<int:int, int> g = [1:1];
+	node<int:int> n = 2:2;
+	g.set_node(n);
+	return 0;
+}

@@ -5,24 +5,25 @@ int main() {
     bool valid = true;
 
     for_node(n : g) {
-        node<string:int> n1 = n.name():999999;
-        shortest_paths.add_node(n1);
+        node<string:int> n1 = n.get_name():999999;
+        shortest_paths.set_node(n1);
     }
 
     for_node(n : shortest_paths) {
         for_edge(src, dst, w : g) {
-            int src_data = shortest_paths.get_data(src.name());
-            int dst_data = shortest_paths.get_data(dst.name());
+            int src_data = src.get_data();
+            int dst_data = dst.get_data();
             if (src_data + w < dst_data) {
-                shortest_paths.set_data(dst.name(), src_data + w);
-                shortest_paths.set_edge(src.name(), dst.name(), 0);
+                dst.set_data(src_data + w);
+                shortest_paths.set_node(dst);
+                shortest_paths.set_edge(src.get_name(); dst.get_name(); 0);
             }
         }
     }
 
     for_edge(src, dst, w : g) {
-        int src_data = shortest_paths.get_data(src.name());
-        int dst_data = shortest_paths.get_data(dst.name());
+        int src_data = src.get_data();
+        int dst_data = dst.get_data();
         if (src_data + w < dst_data) {
             print("negative edge weight cycle");
             valid = false;

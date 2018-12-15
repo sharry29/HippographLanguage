@@ -1,0 +1,10 @@
+int main() {
+	node<int:string> n1 = 1:"foo";
+	node<string:bool> n2 = "bar":true;
+	node<bool:string> n3 = false;
+	n1.print();
+	print("");
+	n2.print();
+	print("");
+	n3.print();
+}

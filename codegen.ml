@@ -81,8 +81,23 @@ let translate (globals, functions) =
   let set_node_data_str_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; str_t; i1_t |] in
   let set_node_data_str_func : L.llvalue = L.declare_function "set_node_data_str" set_node_data_str_t the_module in
 
+  let get_node_label_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let get_node_label_func : L.llvalue = L.declare_function "get_node_label" get_node_label_t the_module in
+
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
+
+  let graph_set_edge_int_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t; i32_t |] in
+  let graph_set_edge_int_int_func : L.llvalue = L.declare_function "graph_set_edge_int_int" graph_set_edge_int_int_t the_module in
+
+  let graph_set_edge_str_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t; i32_t |] in
+  let graph_set_edge_str_int_func : L.llvalue = L.declare_function "graph_set_edge_str_int" graph_set_edge_str_int_t the_module in
+
+  let print_node_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t |] in
+  let print_node_func : L.llvalue = L.declare_function "print_node" print_node_t the_module in
+
+  let print_graph_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t |] in
+  let print_graph_func : L.llvalue = L.declare_function "print_graph" print_graph_t the_module in
 
   let set_edge_w_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i1_t |] in
   let set_edge_w_int_func : L.llvalue = L.declare_function "set_edge_w_int" set_edge_w_int_t the_module in
@@ -116,6 +131,18 @@ let translate (globals, functions) =
 
   let get_graph_next_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_graph_next_edge_func : L.llvalue = L.declare_function "get_graph_next_edge" get_graph_next_edge_t the_module in
+
+  let graph_set_node_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; void_ptr_t |] in
+  let graph_set_node_func : L.llvalue = L.declare_function "graph_set_node" graph_set_node_t the_module in
+
+  let remove_edge_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; void_ptr_t |] in
+  let remove_edge_func : L.llvalue = L.declare_function "remove_edge" remove_edge_t the_module in
+
+  let get_edge_by_src_and_dst_int_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t; i32_t |] in
+  let get_edge_by_src_and_dst_int_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_int" get_edge_by_src_and_dst_int_t the_module in
+
+  let get_edge_by_src_and_dst_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t; void_ptr_t |] in
+  let get_edge_by_src_and_dst_str_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_str" get_edge_by_src_and_dst_str_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -192,7 +219,7 @@ let translate (globals, functions) =
          let result = (match sfdecl.styp with A.Void -> "" | _ -> f ^ "_result") in
          L.build_call fdef (Array.of_list actuals) result builder
       | SMCall (e, s, args) ->
-         handle_mcall_expr vars ty e args s
+         handle_mcall_expr vars builder ty e args s
       | SAsn (s, (t, v)) ->
          (* If e is SNull, change to default value for type s *)
          let v = match v with
@@ -264,13 +291,80 @@ let translate (globals, functions) =
       | SNoexpr ->
          L.undef (L.void_type context) (* placeholder *)
     
-    and handle_mcall_expr vars ty e args = function
+    and handle_mcall_expr vars builder ty e args = function
+    | "set_node" ->
+         (match args with
+          | ((A.Node(_), _) as n) :: [] ->
+            let g_ptr = expr vars builder e in
+            let n_ptr = expr vars builder n in
+            L.build_call graph_set_node_func [| g_ptr; n_ptr |] "tmp_data" builder        
+          | _ -> raise A.Unsupported_constructor)
+    | "remove_edge" ->
+         (match args with
+          | ((src_typ, _) as src) :: ((dst_typ, _) as dst) :: [] ->
+             let g_ptr = expr vars builder e in
+             let src_ptr = expr vars builder src in
+             let dst_ptr = expr vars builder dst in
+             let e_ptr = (match src_typ with
+               | A.Int | A.Bool ->
+                  L.build_call get_edge_by_src_and_dst_int_func [| g_ptr; src_ptr; dst_ptr |] "get_edge_by_src_and_dst_int" builder
+               | A.String -> 
+                  L.build_call get_edge_by_src_and_dst_str_func [| g_ptr; src_ptr; dst_ptr |] "get_edge_by_src_and_dst_str" builder
+               | _ -> raise A.Unsupported_constructor) in
+             L.build_call remove_edge_func [| g_ptr; e_ptr |] "remove_edge" builder
+          | _ -> raise A.Unsupported_constructor)
+    | "get_name" ->
+         let n_ptr = expr vars builder e in
+         let ret = L.build_call get_node_label_func [| n_ptr |] "tmp_data" builder in
+         (match ty with
+         | A.String -> ret
+         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+         | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
     | "get_data" ->
          let n_ptr = expr vars builder e in
          let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
          (match ty with
          | A.String -> ret
          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+    | "set_edge" ->
+         (match args with
+          | ((src_typ, _) as src) :: (((dst_typ, _) as dst) :: (((w_typ, _) as w) :: [])) ->
+             let g_ptr = expr vars builder e in
+             let src' = expr vars builder src in
+             let dst' = expr vars builder dst in
+             let w' = expr vars builder w in
+             (match (src_typ, w_typ) with
+             | (A.Int, A.Int) -> L.build_call graph_set_edge_int_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
+             | (A.String, A.Int) -> L.build_call graph_set_edge_str_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder)
+         | _ -> raise A.Unsupported_constructor)
+    | "set_data" ->
+         (match args with
+          | ((dt, dv) as d) :: [] ->
+             let n_ptr = expr vars builder e in
+             let d_ptr = expr vars builder d in
+             (match dt with
+              | A.Int ->
+                 if dv = SNull
+                 then L.build_call set_node_data_int_func [| n_ptr; L.const_int i32_t 0; L.const_int i1_t 0 |] "" builder
+                 else L.build_call set_node_data_int_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
+              | A.Bool ->
+                 if dv = SNull
+                 then L.build_call set_node_data_bool_func [| n_ptr; L.const_int i1_t 0; L.const_int i1_t 0 |] "" builder
+                 else L.build_call set_node_data_bool_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
+              | A.String ->
+                 if dv = SNull
+                 then L.build_call set_node_data_str_func [| n_ptr; L.const_null str_t; L.const_int i1_t 0 |] "" builder
+                 else L.build_call set_node_data_str_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
+              | _ -> raise A.Unsupported_constructor)
+          | _ -> raise A.Unsupported_constructor)
+    | "print" ->
+         (match e with
+          | (Graph(_), _) ->
+             let g_ptr = expr vars builder e in
+             L.build_call print_graph_func [| g_ptr |] "" builder
+          | (Node(_), _) ->
+             let n_ptr = expr vars builder e in
+             L.build_call print_node_func [| n_ptr |] "" builder)
     | "weight" ->
          let n_ptr = expr vars builder e in
          (match ty with

@@ -1,0 +1,5 @@
+int main() {
+	node<int:string> n = 1:"foo";
+	n.set_data(1);
+	return 0;
+}
