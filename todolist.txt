@@ -6,7 +6,7 @@
     + graph
         * [DONE] set_node
         * [DONE] remove_edge
-        * set_edge (irina)
+        * [DONE] set_edge (irina)
         * remove_node (ben, irina)
         * has_node (ben, irina)
         * are_neighbors (ben, harry)

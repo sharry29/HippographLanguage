@@ -83,10 +83,10 @@ let check (globals, funcs) =
         | Graph(st, dt, wt) ->
           (match s with
           | "set_node" ->
-              { typ = Bool; fname = s; args = [(Node(st, wt), "x")]; body = [] }
+              { typ = Int; fname = s; args = [(Node(st, wt), "x")]; body = [] }
           | "set_edge" ->
               if st = dt
-              then { typ = Bool; fname = s; args = [(st, "src"); (st, "dst"); (wt, "w")]; body = [] }
+              then { typ = Int; fname = s; args = [(st, "src"); (st, "dst"); (wt, "w")]; body = [] }
               else raise (Failure ("edge-graph type mismatch"))
           | "remove_edge" ->
               { typ = Int; fname = s; args = [(st, "src"); (st, "dst")]; body = [] }
