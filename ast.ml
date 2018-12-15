@@ -100,6 +100,22 @@ let string_of_uop = function
     Not -> "!"
   | Neg -> "-"
 
+
+let rec string_of_typ = function
+    Int    -> "int"
+  | Bool   -> "bool"
+  | Float  -> "float"
+  | Void   -> "void"
+  | Char   -> "char"
+  | Fun    -> "fun"
+  | String -> "string"
+  | Void   -> "void"
+  | Node(nl, nd)  -> "node<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ">"
+  | Edge(vl)      -> "edge<" ^ string_of_typ vl ^ ">"
+  | Graph(nl, nd, ew) -> "graph<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ", " ^ string_of_typ ew ^ ">"
+
+let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ "; "
+
 let rec string_of_expr = function
     Intlit(l) -> string_of_int l
   | Floatlit(l) -> l
@@ -107,6 +123,7 @@ let rec string_of_expr = function
   | Boollit(false) -> "false"
   | Var(s) -> s
   | Stringlit(l) -> l
+  | Funsig(typ, bl, e) -> " fun: " ^ (string_of_typ typ) ^ " (" ^ (String.concat "" (List.map string_of_vdecl bl)) ^ ") { " ^ string_of_expr e ^ " }"
   | Null -> "null"
   | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
@@ -123,18 +140,6 @@ let rec string_of_expr = function
       "], edges: [" ^ String.concat ", " (List.map string_of_expr edge_list) ^ "]]"
   | Noexpr -> ""
 
-let rec string_of_typ = function
-    Int    -> "int"
-  | Bool   -> "bool"
-  | Float  -> "float"
-  | Void   -> "void"
-  | Char   -> "char"
-  | Fun    -> "fun"
-  | String -> "string"
-  | Void   -> "void"
-  | Node(nl, nd)  -> "node<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ">"
-  | Edge(vl)      -> "edge<" ^ string_of_typ vl ^ ">"
-  | Graph(nl, nd, ew) -> "graph<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ", " ^ string_of_typ ew ^ ">"
 
 let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
 

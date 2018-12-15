@@ -46,6 +46,8 @@ type sfdecl = {
 
 type sprogram = binding list * sfdecl list
 
+let string_of_svdecl (t, var) = string_of_typ t ^ " " ^ var ^ "; "
+
 let rec string_of_sexpr (t, e) =
   match e with
     SIntlit(l) -> string_of_int l
@@ -54,6 +56,7 @@ let rec string_of_sexpr (t, e) =
   | SFloatlit(l) -> l
   | SVar(s) -> s
   | SStringlit(l) -> l
+  | SFunsig(typ, bl, e) -> " fun: " ^ (string_of_typ typ) ^ " (" ^ (String.concat "" (List.map string_of_svdecl bl)) ^ ") { " ^ string_of_sexpr e ^ " }"
   | SNull -> string_of_typ t ^ " null"
   | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
@@ -69,8 +72,6 @@ let rec string_of_sexpr (t, e) =
       "[nodes: [" ^ String.concat ", " (List.map string_of_sexpr node_list) ^
       "], edges: [" ^ String.concat ", " (List.map string_of_sexpr edge_list) ^ "]]"
   | SNoexpr -> ""
-
-let string_of_svdecl (t, var) = string_of_typ t ^ " " ^ var ^ ";\n"
 
 let rec string_of_sstmt = function
     SBlock(stmts) ->
