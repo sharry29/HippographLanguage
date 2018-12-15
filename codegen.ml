@@ -93,6 +93,12 @@ let translate (globals, functions) =
   let graph_set_edge_str_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t; i32_t |] in
   let graph_set_edge_str_int_func : L.llvalue = L.declare_function "graph_set_edge_str_int" graph_set_edge_str_int_t the_module in
 
+  let get_node_by_label_int_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t |] in
+  let get_node_by_label_int_func : L.llvalue = L.declare_function "get_node_by_label_int" get_node_by_label_int_t the_module in
+
+  let get_node_by_label_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; str_t |] in
+  let get_node_by_label_str_func : L.llvalue = L.declare_function "get_node_by_label_str" get_node_by_label_str_t the_module in
+
   let print_node_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t |] in
   let print_node_func : L.llvalue = L.declare_function "print_node" print_node_t the_module in
 
@@ -143,6 +149,9 @@ let translate (globals, functions) =
 
   let get_edge_by_src_and_dst_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t; void_ptr_t |] in
   let get_edge_by_src_and_dst_str_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_str" get_edge_by_src_and_dst_str_t the_module in
+
+  let neighbors_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t; i1_t |] in
+  let neighbors_func : L.llvalue = L.declare_function "neighbors" neighbors_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -359,12 +368,26 @@ let translate (globals, functions) =
           | _ -> raise A.Unsupported_constructor)
     | "print" ->
          (match e with
-          | (Graph(_), _) ->
+          | (A.Graph(_), _) ->
              let g_ptr = expr vars builder e in
              L.build_call print_graph_func [| g_ptr |] "" builder
-          | (Node(_), _) ->
+          | (A.Node(_), _) ->
              let n_ptr = expr vars builder e in
-             L.build_call print_node_func [| n_ptr |] "" builder)
+             L.build_call print_node_func [| n_ptr |] "" builder
+          | _ -> raise A.Unsupported_constructor)
+    | "neighbors" ->
+         (match e, args with
+          | (A.Graph(_), _), ((nlt, _) as nl) :: level :: include_current :: [] ->
+             let g_ptr = expr vars builder e in
+             let nl' = expr vars builder nl in
+             let level' = expr vars builder level in
+             let include_current' = expr vars builder include_current in
+             let n_ptr = (match nlt with
+                         | A.Int | A.Bool -> L.build_call get_node_by_label_int_func [| g_ptr; nl' |] "get_node_by_label_int" builder
+                         | A.String -> L.build_call get_node_by_label_str_func [| g_ptr; nl' |] "get_node_by_label_str" builder
+                         | _ -> raise A.Unsupported_constructor) in
+             L.build_call neighbors_func [| n_ptr; level'; include_current' |] "neighbors" builder
+          | _ -> raise A.Unsupported_constructor)
     | "weight" ->
          let n_ptr = expr vars builder e in
          (match ty with

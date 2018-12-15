@@ -60,6 +60,16 @@ typedef struct graph {
   edge_list *edge_list;
 } graph;
 
+typedef struct q_item {
+  node *n;
+  struct q_item *next;
+} q_item;
+
+typedef struct queue {
+  q_item *hd;
+  q_item *tl;
+} queue;
+
 /* create primitive of type */
 
 void *create_prim_int(int i) {
@@ -681,12 +691,115 @@ int is_empty(graph *g) {
   return 1;
 }
 
-int neighbors_int_name(graph *g, int name, int level, int include_current) {
-  return 0;
+/* GRAPH TRAVERSAL */
+
+queue *create_queue() {
+  queue *Q = (queue *) malloc(sizeof(queue));
+  Q -> hd = NULL;
+  Q -> tl = NULL;
+  return Q;  
 }
 
-int neighbors_str_name(graph *g, char *name, int level, int include_current) {
-  return 0;
+q_item *create_q_item(node *n) {
+  q_item *i = (q_item *) malloc(sizeof(q_item));
+  i -> n = n;
+  i -> next = NULL;
+  return i;
+}
+
+void enqueue(queue *Q, node *n) {
+  if (Q -> tl == NULL) {
+    Q -> hd = create_q_item(n);
+    Q -> tl = Q -> hd;
+  } else {
+    Q -> tl -> next = create_q_item(n);
+    Q -> tl = Q -> tl -> next;
+  }
+}
+
+node *dequeue(queue *Q) {
+  if (Q -> hd == NULL) {
+    return NULL;
+  } else {
+    node *n = Q -> hd -> n;
+    q_item *tmp = Q -> hd;
+    Q -> hd = Q -> hd -> next;
+    free(tmp);
+    if (Q -> hd == NULL) Q -> tl = NULL;
+    return n;
+  }
+}
+
+void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, int level) {
+  if (level == 0) return;
+
+  queue *Q = create_queue();
+
+  neighbor_list_item *nli = n_orig -> neighbor_list -> hd;
+  while (nli != NULL) {
+    node *neighbor = nli -> edge -> dst;
+
+    // Don't include neighbor if it is the root node
+    if (neighbor == n_root) {
+      nli = nli -> next;
+      continue;
+    }
+
+    // Try to find node with same label as neighbor in g_new
+    node *neighbor_copy;
+    if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+      neighbor_copy = get_node_by_label_int(g_new, neighbor -> label -> i);
+    } else if (neighbor -> label_typ == STRTYPE) {
+      neighbor_copy = get_node_by_label_str(g_new, neighbor -> label -> s);
+    }
+
+    edge *e = create_edge();
+    if (n_orig == neighbor && neighbor_copy != NULL) {
+      // If edge is self-directed, add edge to graph but nothing else
+      if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+        add_edge_int(g_new, e, neighbor_copy -> label -> i, neighbor_copy -> label -> i);
+      } else if (neighbor -> label_typ == STRTYPE) {
+        add_edge_str(g_new, e, neighbor_copy -> label -> s, neighbor_copy -> label -> s);
+      }
+    } else {
+      // If node doesn't yet exist in g_new, create one and add original neighbor to processing queue
+      if (neighbor_copy == NULL) {
+        neighbor_copy = clone_node(neighbor);
+        add_node(g_new, neighbor_copy);
+        enqueue(Q, neighbor);
+      }
+      
+      if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+        // add_edge_int(g_new, e, n_orig -> label -> i, neighbor_copy -> label -> i);
+      } else if (neighbor -> label_typ == STRTYPE) {
+        add_edge_str(g_new, e, n_orig -> label -> s, neighbor_copy -> label -> s);
+      }
+    }
+
+    nli = nli -> next;
+  }
+
+  while (Q -> tl != NULL) {
+    add_neighbors_of_node_to_graph(g_new, n_root, dequeue(Q), level - 1);
+  }
+
+  free(Q);
+}
+
+graph *neighbors(node *n, int level, int include_current) {
+  graph *g_new = create_graph();
+  if (level <= 1) level = 1;
+
+  if (n == NULL) return g_new;
+
+  if (include_current != 0) {
+    add_node(g_new, clone_node(n));
+    add_neighbors_of_node_to_graph(g_new, NULL, n, level);
+  } else {
+    add_neighbors_of_node_to_graph(g_new, n, n, level);
+  }
+
+  return g_new;
 }
 
 int find_data_int(graph *g, int data) {
@@ -696,6 +809,8 @@ int find_data_int(graph *g, int data) {
 int find_data_str(graph *g, char *data) {
   return 0;
 }
+
+/* PRINTING */
 
 void print_node(node *n) {
   if (n -> label_typ == INTTYPE) {
