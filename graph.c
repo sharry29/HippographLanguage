@@ -719,7 +719,11 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_orig, int level) {
     edge *e = create_edge();
     if (n_orig == neighbor && neighbor_copy != NULL) {
       // If edge is self-directed, add edge to graph but nothing else
-      add_edge_int(g_new, e, neighbor_copy -> label -> i, neighbor_copy -> label -> i);
+      if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+        add_edge_int(g_new, e, neighbor_copy -> label -> i, neighbor_copy -> label -> i);
+      } else if (neighbor -> label_typ == STRTYPE) {
+        add_edge_str(g_new, e, neighbor_copy -> label -> s, neighbor_copy -> label -> s);
+      }
     } else {
       // If node doesn't yet exist in g_new, create one and add original neighbor to processing queue
       if (neighbor_copy == NULL) {
@@ -727,7 +731,12 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_orig, int level) {
         add_node(g_new, neighbor_copy);
         enqueue(Q, neighbor);
       }
-      add_edge_int(g_new, e, n_orig -> label -> i, neighbor_copy -> label -> i);
+      
+      if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+        // add_edge_int(g_new, e, n_orig -> label -> i, neighbor_copy -> label -> i);
+      } else if (neighbor -> label_typ == STRTYPE) {
+        add_edge_str(g_new, e, n_orig -> label -> s, neighbor_copy -> label -> s);
+      }
     }
 
     nli = nli -> next;
@@ -740,9 +749,8 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_orig, int level) {
   free(Q);
 }
 
-graph *neighbors_label_int(graph *g, int label, int level, int include_current) {
+graph *neighbors(node *n, int level, int include_current) {
   graph *g_new = create_graph();
-  node *n = get_node_by_label_int(g, label);
   if (level <= 1) level = 1;
 
   if (n == NULL) return g_new;

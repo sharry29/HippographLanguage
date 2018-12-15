@@ -80,7 +80,7 @@ let check (globals, funcs) =
                { typ = Void; fname = s; args = []; body = [] }
             | _ ->
                raise Not_found)
-        | Graph(lt, dt, _) ->
+        | Graph(lt, dt, wt) ->
           (match s with
           | "set_node" ->
               { typ = Int; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
@@ -88,6 +88,8 @@ let check (globals, funcs) =
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
           | "print" ->
              { typ = Void; fname = s; args = []; body = [] }
+          | "neighbors" ->
+             { typ = Graph(lt, dt, wt); fname = s; args = [(lt, "label"); (Int, "level"); (Bool, "include_current")]; body = [] }
 (*           | "set_edge" ->
               { typ = Bool; fname = s; args = [(sname, dname, w), "x"]; body = [] } *)
           | _ -> raise Not_found)
@@ -171,8 +173,8 @@ let check (globals, funcs) =
 
       match lvt, rvt, e' with
          (* If left expression is a node with bool type data, wrap right expression in a SNodeExpr *)
-      | Node(llt, ldt), _, SNodeExpr((lt, le), d) ->
-         let (dt, de) = coerce_null_to_typ ldt d in
+      | Node(llt, ldt), _, SNodeExpr((lt, _), d) ->
+         let (dt, _) = coerce_null_to_typ ldt d in
          let lt = check_asn llt lt err in
          let dt = check_asn ldt dt err in
          (Node(lt, dt), SAsn(var, (lvt, e')))
