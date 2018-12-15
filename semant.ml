@@ -80,12 +80,14 @@ let check (globals, funcs) =
                else { typ = Void; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
             | _ ->
                raise Not_found)
-        | Graph(lt, dt, _) ->
+        | Graph(st, dt, wt) ->
           (match s with
           | "set_node" ->
-              { typ = Bool; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
+              { typ = Bool; fname = s; args = [(Node(st, wt), "x")]; body = [] }
           | "set_edge" ->
-              { typ = Bool; fname = s; args = [(sname, dname, w), "x"]; body = [] }
+              if st = dt
+              then { typ = Bool; fname = s; args = [(Graph(st, st, wt), "s")]; body = [] }
+              else raise (Failure ("edge-graph type mismatch"))
           | _ -> raise Not_found)
         | _ -> raise Not_found
     with Not_found -> raise (Failure ("unrecognized method " ^ string_of_typ libtyp ^ "." ^ s))

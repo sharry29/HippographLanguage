@@ -514,6 +514,16 @@ int graph_set_node(graph *g, node *n) {
   return 0;
 }
 
+int graph_set_edge_int_int(graph *g, int src_label, int dst_label, int w) {
+  edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
+  if (add_edge_int(g, e, src_label, dst_label) == NULL) {
+    remove_edge(g, e);
+    add_edge_int(g, e, src_label, dst_label);
+  }
+
+  return 0;
+}
+
 int remove_edge(graph *g, edge *e) {
   // remove from edge list
   edge *curr_e = g -> edge_list -> hd;

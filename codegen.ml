@@ -84,8 +84,8 @@ let translate (globals, functions) =
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
 
-  let set_edge_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t |] in
-  let set_edge_func : L.llvalue = L.declared_function "set_edge" set_edge_t the_module in
+  let graph_set_edge_int_int_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t; i32_t; i32_t; i32_t |] in
+  let graph_set_edge_int_int_func : L.llvalue = L.declare_function "graph_set_edge_int_int" graph_set_edge_int_int_t the_module in
 
   let set_edge_w_int_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t; i32_t; i1_t |] in
   let set_edge_w_int_func : L.llvalue = L.declare_function "set_edge_w_int" set_edge_w_int_t the_module in
@@ -285,10 +285,19 @@ let translate (globals, functions) =
          | A.String -> ret
          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
     | "set_edge" ->
-         (* if not in graph already create new edge and add it
-            else remove edge and add it again?*)
-         let e_ptr = expr vars builder e in
-         let ret = L.build_call set_edge_func [| e_ptr |] "tmp_data" builder
+         let (sname_typ, dname_typ, w_typ) = 
+          match ty with
+           | Graph(A.Int, A.Int, A.Int) -> (A.Int, A.Int, A.Int)
+         in
+         (match args with
+          | ((sname_typ, _) as s) :: (((dname_typ, _) as d) :: (((w_typ, _) as w) :: [])) ->
+             let g_ptr = expr vars builder e in
+             let s' = expr vars builder s in
+             let d' = expr vars builder d in
+             let w' = expr vars builder w in
+             (match (sname_typ, w_typ) with
+             | (A.Int, A.Int) -> L.build_call graph_set_edge_int_int_func [| g_ptr; s'; d'; w' |] "tmp_data" builder)
+         | _ -> raise A.Unsupported_constructor)
     | "weight" ->
          let n_ptr = expr vars builder e in
          (match ty with
