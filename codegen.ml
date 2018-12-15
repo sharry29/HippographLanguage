@@ -324,18 +324,14 @@ let translate (globals, functions) =
          | A.String -> ret
          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
     | "set_edge" ->
-         let (sname_typ, dname_typ, w_typ) = 
-          match ty with
-           | Graph(A.Int, A.Int, A.Int) -> (A.Int, A.Int, A.Int)
-         in
          (match args with
-          | ((sname_typ, _) as s) :: (((dname_typ, _) as d) :: (((w_typ, _) as w) :: [])) ->
+          | ((src_typ, _) as src) :: (((dst_typ, _) as dst) :: (((w_typ, _) as w) :: [])) ->
              let g_ptr = expr vars builder e in
-             let s' = expr vars builder s in
-             let d' = expr vars builder d in
+             let src' = expr vars builder src in
+             let dst' = expr vars builder dst in
              let w' = expr vars builder w in
-             (match (sname_typ, w_typ) with
-             | (A.Int, A.Int) -> L.build_call graph_set_edge_int_int_func [| g_ptr; s'; d'; w' |] "tmp_data" builder)
+             (match (src_typ, w_typ) with
+             | (A.Int, A.Int) -> L.build_call graph_set_edge_int_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder)
          | _ -> raise A.Unsupported_constructor)
     | "set_data" ->
          (match args with

@@ -86,7 +86,7 @@ let check (globals, funcs) =
               { typ = Bool; fname = s; args = [(Node(st, wt), "x")]; body = [] }
           | "set_edge" ->
               if st = dt
-              then { typ = Bool; fname = s; args = [(Graph(st, st, wt), "s")]; body = [] }
+              then { typ = Bool; fname = s; args = [(st, "src"); (st, "dst"); (wt, "w")]; body = [] }
               else raise (Failure ("edge-graph type mismatch"))
           | "remove_edge" ->
               { typ = Int; fname = s; args = [(st, "src"); (st, "dst")]; body = [] }
@@ -251,7 +251,7 @@ let check (globals, funcs) =
       let param_length = List.length md.args in
       if List.length args != param_length
       then raise (Failure ("expecting " ^ string_of_int param_length ^
-                           " arguments in " ^ string_of_expr (MCall(instance, mname, args))))
+                           " arguments in method " ^ string_of_expr (MCall(instance, mname, args))))
       else let check_call (ft, _) e =
              let (et, e') = expr vars e in
              let err = "illegal argument found " ^ string_of_typ et ^
