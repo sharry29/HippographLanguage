@@ -391,7 +391,7 @@ node *get_node_by_label_str(graph *g, char *label) {
   return curr;
 }
 
-edge *get_edge_by_src_and_dst_int(graph *g, int src_label, int dst_label) {
+edge *get_edge_by_src_and_dst_int_int(graph *g, int src_label, int dst_label) {
   edge *curr = g -> edge_list -> hd;
   while (curr != NULL) {
     if (get_edge_src(curr) -> label -> i == src_label &&
@@ -426,6 +426,7 @@ edge *get_edge_by_src_and_dst_int_int(graph *g, int src_label, int dst_label) {
     curr = curr -> next;
   }
   return NULL;
+
 }
 
 edge *get_edge_by_src_and_dst_int_str(graph *g, int src_label, int dst_label) {
@@ -627,6 +628,18 @@ int graph_set_edge_int(graph *g, int src_label, int dst_label) {
   edge *new_e = create_edge();
   set_edge_w_int(new_e, 0, 0);
   add_edge_int(g, new_e, src_label, dst_label);
+
+  return 0;
+}
+
+int graph_set_edge_str_str(graph *g, char *src_label, char *dst_label, char *w) {
+  edge *e = get_edge_by_src_and_dst_str_str(g, src_label, dst_label);
+  if (e != NULL)
+    remove_edge(g, e);
+
+  edge *new_e = create_edge();
+  set_edge_w_str(new_e, w, 1);
+  add_edge_str(g, new_e, src_label, dst_label);
 
   return 0;
 }
