@@ -714,18 +714,53 @@ int remove_all_edges(graph *g, node *n) {
 
 int remove_node_int(graph *g, int label){
   node *curr = g -> node_list -> hd;
+  if (*(int *) get_node_label(curr) == label) {
+    node *n = get_node_by_label_int(g, label);
+    remove_all_edges(g, n);
+    g -> node_list -> hd = curr -> next;
+    free(curr);
+    return 0;
+  }
+  node *prev = curr;
+  curr = curr -> next;
   while (curr != NULL) {
     if (*(int *) get_node_label(curr) == label) {
-      curr = curr -> next;
       node *n = get_node_by_label_int(g, label);
       remove_all_edges(g, n);
+      prev -> next = curr -> next;
+      free(curr);
       return 0;
     }
+    prev = curr;
     curr = curr -> next;
   }
   return -1;
 }
-  //strcmp((char *) get_node_label(curr), (char *)get_node_label(n)) == 0) {
+ 
+int remove_node_str(graph *g, char *label){
+  node *curr = g -> node_list -> hd;
+  if (strcmp((char *) get_node_label(curr), label) == 0) {
+    node *n = get_node_by_label_str(g, label);
+    remove_all_edges(g, n);
+    g -> node_list -> hd = curr -> next;
+    free(curr);
+    return 0;
+  }
+  node *prev = curr;
+  curr = curr -> next;
+  while (curr != NULL) {
+    if (strcmp((char *) get_node_label(curr), label) == 0) {
+      node *n = get_node_by_label_str(g, label);
+      remove_all_edges(g, n);
+      prev -> next = curr -> next;
+      free(curr);
+      return 0;
+    }
+    prev = curr;
+    curr = curr -> next;
+  }
+  return -1;
+}
 
 int has_node_int(graph *g, int name) {
   if (get_node_by_label_int(g, name)) {

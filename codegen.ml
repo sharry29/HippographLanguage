@@ -177,6 +177,12 @@ let translate (globals, functions) =
   let remove_node_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t |] in
   let remove_node_int_func : L.llvalue = L.declare_function "remove_node_int" remove_node_int_t the_module in
 
+  let remove_node_str_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t |] in
+  let remove_node_str_func : L.llvalue = L.declare_function "remove_node_str" remove_node_str_t the_module in
+
+  let remove_node_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t |] in
+  let remove_node_bool_func : L.llvalue = L.declare_function "remove_node_int" remove_node_bool_t the_module in
+
   let get_edge_by_src_and_dst_int_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t; i32_t |] in
   let get_edge_by_src_and_dst_int_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_int" get_edge_by_src_and_dst_int_t the_module in
 
@@ -347,7 +353,9 @@ let translate (globals, functions) =
             let g_ptr = expr vars builder e in
             let l' = expr vars builder l in 
             (match l_typ with
-             | A.Int -> L.build_call remove_node_int_func [| g_ptr; l' |] "tmp_data" builder)
+             | A.Int -> L.build_call remove_node_int_func [| g_ptr; l' |] "tmp_data" builder
+             | A.String -> L.build_call remove_node_str_func [| g_ptr; l' |] "tmp_data" builder
+             | A.Bool -> L.build_call remove_node_bool_func [| g_ptr; l' |] "tmp_data" builder)
           | _ -> raise A.Unsupported_constructor)
     | "remove_edge" ->
          (match args with
