@@ -60,7 +60,7 @@ let check (globals, funcs) =
   in
 
   (* Return a method from our symbol table *)
-  let find_method libtyp s =
+  let find_method libtyp s margs=
     try match libtyp with
         | Edge(wt) ->
             (match s with
@@ -87,6 +87,9 @@ let check (globals, funcs) =
           | "set_node" ->
               { typ = Int; fname = s; args = [(Node(lt, wt), "x")]; body = [] }
           | "set_edge" ->
+              if List.length margs = 2 then
+              { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
+              else
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst"); (wt, "w")]; body = [] }
           | "remove_edge" ->
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
@@ -256,7 +259,7 @@ let check (globals, funcs) =
 
     and check_mcall_expr fdecls vars instance mname args =
       let (instance_typ, _) as instance' = expr fdecls vars instance in
-      let md = find_method instance_typ mname in
+      let md = find_method instance_typ mname args in
       let param_length = List.length md.args in
       if List.length args != param_length
       then raise (Failure ("expecting " ^ string_of_int param_length ^
