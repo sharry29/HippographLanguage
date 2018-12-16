@@ -919,12 +919,31 @@ graph *neighbors(node *n, int level, int include_current) {
   return g_new;
 }
 
-int find_data_int(graph *g, int data) {
-  return 0;
+graph *find_data_int(graph *g, int data) {
+  node *n = g -> node_list -> hd;
+  graph *g_new = create_graph();
+  while (n != NULL) {
+    if (n -> has_val == 1 && (n -> data_typ == INTTYPE || n -> data_typ == BOOLTYPE) && *(n -> data -> i) == data) {
+      node *n_cp = clone_node(n);
+      add_node(g_new, n_cp);
+    }
+    n = n -> next;
+  }
+  return g_new;
 }
 
-int find_data_str(graph *g, char *data) {
-  return 0;
+graph *find_data_str(graph *g, char *data) {
+  node *n = g -> node_list -> hd;
+  graph *g_new = create_graph();
+
+  while (n != NULL) {
+    if (n -> has_val == 1 && n -> data_typ == STRTYPE && strcmp(n -> data -> s, data) == 0) {
+      node *n_cp = clone_node(n);
+      add_node(g_new, n_cp);
+    }
+    n = n -> next;
+  }
+  return g_new;
 }
 
 /* PRINTING */
@@ -993,3 +1012,34 @@ void print_graph(graph *g) {
 
   return;
 }
+
+// int main() {
+//   graph *g = create_graph();
+
+//   node *n1 = create_node();
+//   set_node_label_str(n1, "1");
+//   add_node(g, n1);
+
+//   node *n2 = create_node();
+//   set_node_label_str(n2, "2");
+//   add_node(g, n2);
+
+//   node *n3 = create_node();
+//   set_node_label_str(n3, "3");
+//   add_node(g, n3);
+
+//   graph_set_edge_str(g, "1", "2");
+//   edge *e12 = get_edge_by_src_and_dst_str(g, "1", "2");
+//   set_edge_w_int(e12, 123, 1);
+
+//   graph_set_edge_str(g, "2", "1");
+//   edge *e21 = get_edge_by_src_and_dst_str(g, "2", "1");
+
+//   graph_set_edge_str(g, "2", "3");
+//   edge *e23 = get_edge_by_src_and_dst_str(g, "2", "3");
+
+//   graph_set_edge_str(g, "3", "2");
+//   edge *e32 = get_edge_by_src_and_dst_str(g, "3", "2");
+
+//   print_graph(g);
+// }

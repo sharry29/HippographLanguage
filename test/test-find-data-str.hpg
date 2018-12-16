@@ -1,0 +1,8 @@
+int main() {
+	graph<int:string> g = [1:"a" -()> 2:"b" <()> 3:"b"; 1 <()- 4];
+	graph<int:string> g_new = g.find("b");
+	for_node(n : g_new) {
+		n.print();
+		print("");
+	}
+}

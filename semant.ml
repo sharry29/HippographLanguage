@@ -101,6 +101,8 @@ let check (globals, funcs) =
              { typ = Int; fname = s; args = [(lt, "src")]; body = [] }
           | "neighbors" ->
              { typ = Graph(lt, dt, wt); fname = s; args = [(lt, "label"); (Int, "level"); (Bool, "include_current")]; body = [] }
+          | "find" ->
+             { typ = Graph(lt, dt, wt); fname = s; args = [(dt, "data")]; body = [] }
           | _ -> raise Not_found)
         | _ -> raise Not_found
     with Not_found -> raise (Failure ("unrecognized method " ^ string_of_typ libtyp ^ "." ^ s))

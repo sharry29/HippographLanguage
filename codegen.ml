@@ -201,6 +201,15 @@ let translate (globals, functions) =
   let neighbors_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t; i1_t |] in
   let neighbors_func : L.llvalue = L.declare_function "neighbors" neighbors_t the_module in
 
+  let find_data_int_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t |] in
+  let find_data_int_func : L.llvalue = L.declare_function "find_data_int" find_data_int_t the_module in
+
+  let find_data_bool_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i1_t |] in
+  let find_data_bool_func : L.llvalue = L.declare_function "find_data_int" find_data_bool_t the_module in
+
+  let find_data_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; str_t |] in
+  let find_data_str_func : L.llvalue = L.declare_function "find_data_str" find_data_str_t the_module in
+
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
       let name = sfdecl.sfname
@@ -470,6 +479,17 @@ let translate (globals, functions) =
                          | A.String -> L.build_call get_node_by_label_str_func [| g_ptr; nl' |] "get_node_by_label_str" builder
                          | _ -> raise A.Unsupported_constructor) in
              L.build_call neighbors_func [| n_ptr; level'; include_current' |] "neighbors" builder
+          | _ -> raise A.Unsupported_constructor)
+    | "find" ->
+         (match e, args with
+          | (A.Graph(lt, dt, wt), _), d :: [] ->
+            let g_ptr = expr vars builder e in
+            let d' = expr vars builder d in
+            (match dt with
+             | A.Int -> L.build_call find_data_int_func [| g_ptr; d' |] "find_data" builder
+             | A.Bool -> L.build_call find_data_bool_func [| g_ptr; d' |] "find_data" builder
+             | A.String -> L.build_call find_data_str_func [| g_ptr; d' |] "find_data" builder
+             | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
     | "weight" ->
          let n_ptr = expr vars builder e in
