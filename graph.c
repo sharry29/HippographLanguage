@@ -120,9 +120,11 @@ void *create_node() {
 }
 
 int cmp_node_label(node *n1, node *n2) {
+  // return 0 if equal
   int lt = n1 -> label_typ;
   if (lt == INTTYPE || lt == BOOLTYPE) {
-    return *(n1 -> label -> i) == *(n2 -> label -> i);
+    if (*(n1 -> label -> i) == *(n2 -> label -> i)) return 0;
+    else return -1;
   } else if (lt == STRTYPE) {
     return strcmp(n1 -> label -> s, n2 -> label -> s);
   } else {
@@ -525,9 +527,7 @@ void *add_edge_bool(graph *g, edge *e, int src, int dst) {
 void *add_edge_str(graph *g, edge *e, char *src, char *dst) {
   e -> src = get_node_by_label_str(g, src);
   e -> dst = get_node_by_label_str(g, dst);
-  e -> w = NULL;
   e -> next = NULL;
-  e -> has_val = 0;
 
   // add to neighbors
   if (e -> src == NULL || e -> dst == NULL ||
@@ -540,12 +540,12 @@ void *add_edge_str(graph *g, edge *e, char *src, char *dst) {
 int add_node(graph *g, node *n) {
   if (g -> node_list -> hd == NULL) {
     g -> node_list -> hd = n;
-  } else if (cmp_node_label(g -> node_list -> hd, n)) {
+  } else if (cmp_node_label(g -> node_list -> hd, n) == 0) {
     return -1;
   } else {
     node *curr = g -> node_list -> hd;
     while (curr -> next != NULL) {
-      if (cmp_node_label(curr -> next, n)) return -1;
+      if (cmp_node_label(curr -> next, n) == 0) return -1;
       curr = curr -> next;
     }
     curr -> next = n;
