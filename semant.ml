@@ -91,6 +91,8 @@ let check (globals, funcs) =
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
               else
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst"); (wt, "w")]; body = [] }
+          | "remove_node" ->
+              { typ = Int; fname = s; args = [(lt, "x")]; body = [] }
           | "remove_edge" ->
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
           | "print" ->
