@@ -12,7 +12,7 @@ int BOOLTYPE = 4;
 /* data structures */
 
 typedef union primitive {
-  int i;
+  int *i;
   char *s;
   void *v;
 } primitive;
@@ -74,7 +74,8 @@ typedef struct queue {
 
 void *create_prim_int(int i) {
   primitive *p = (primitive *) malloc(sizeof(primitive));
-  p -> i = i;
+  p -> i = (int *) malloc(sizeof(int));
+  *(p -> i) = i;
   return (void *) p;
 }
 
@@ -121,7 +122,7 @@ void *create_node() {
 int cmp_node_label(node *n1, node *n2) {
   int lt = n1 -> label_typ;
   if (lt == INTTYPE || lt == BOOLTYPE) {
-    return n1 -> label -> i == n2 -> label -> i;
+    return *(n1 -> label -> i) == *(n2 -> label -> i);
   } else if (lt == STRTYPE) {
     return strcmp(n1 -> label -> s, n2 -> label -> s);
   } else {
@@ -132,12 +133,12 @@ int cmp_node_label(node *n1, node *n2) {
 node *clone_node(node *n) {
   if (n == NULL) return NULL;
 
-  node *n_cp = (node *) malloc(sizeof(node));
-  memcpy(n_cp, n, sizeof(node));
+  node *n_cp = create_node();
   n_cp -> label = clone_primitive(n -> label);
+  n_cp -> label_typ = n -> label_typ;
   n_cp -> data = clone_primitive(n -> data);
-  n_cp -> neighbor_list = NULL;
-  n_cp -> next = NULL;
+  n_cp -> data_typ = n -> data_typ;
+  n_cp -> has_val = n -> has_val;
   return n_cp;
 }
 
@@ -197,7 +198,7 @@ void *get_node_label(node *n) {
   void *label = NULL;
 
   if (typ == INTTYPE || typ == BOOLTYPE) {
-    label = (void *) &(n -> label -> i);
+    label = (void *) n -> label -> i;
   } else if (typ == STRTYPE) {
     label = (void *) n -> label -> s;
   } else if (typ == VOIDTYPE) {
@@ -211,7 +212,7 @@ void *get_node_data(node *n) {
   void *data = NULL;
 
   if (typ == INTTYPE || typ == BOOLTYPE) {
-    data = (void *) &(n -> data -> i);
+    data = (void *) n -> data -> i;
   } else if (typ == STRTYPE) {
     data = (void *) n -> data -> s;
   } else if (typ == VOIDTYPE) {
@@ -225,7 +226,7 @@ void *get_node_data(node *n) {
 int cmp_edge_weight(edge *e1, edge *e2) {
   int lt = e1 -> w_typ;
   if (lt == INTTYPE || lt == BOOLTYPE) {
-    return e1 -> w -> i == e2 -> w -> i;
+    return *(e1 -> w -> i) == *(e2 -> w -> i);
   } else if (lt == STRTYPE) {
     return strcmp(e1 -> w -> s, e2 -> w -> s);
   } else {
@@ -274,7 +275,7 @@ node *get_edge_dst(edge *e) {
 
 int get_edge_w_int(edge *e) {
   if (e == NULL || e -> has_val == 0) return 0;
-  return e -> w -> i;
+  return *(e -> w -> i);
 }
 
 char *get_edge_w_str(edge *e) {
@@ -294,12 +295,12 @@ void *create_edge() {
 
 edge *clone_edge(edge *e) {
   if (e == NULL) return NULL;
-  edge *e_cp = (edge *) malloc(sizeof(edge));
-  memcpy(e_cp, e, sizeof(edge));
+  edge *e_cp = create_edge();
   e_cp -> src = clone_node(e -> src);
   e_cp -> dst = clone_node(e -> dst);
-  e_cp -> has_val = e -> has_val;
   e_cp -> w = clone_primitive(e -> w);
+  e_cp -> w_typ = e -> w_typ;
+  e_cp -> has_val = e -> has_val;
   e_cp -> next = NULL;
   return e_cp;
 }
@@ -372,7 +373,7 @@ edge *get_graph_next_edge(edge *e) {
 node *get_node_by_label_int(graph *g, int label) {
   node *curr = g -> node_list -> hd;
   while (curr != NULL) {
-    if ((curr -> label_typ == INTTYPE || curr -> label_typ == BOOLTYPE) && *(int *) get_node_label(curr) == label) {
+    if ((curr -> label_typ == INTTYPE || curr -> label_typ == BOOLTYPE) && *(curr -> label -> i) == label) {
       return curr;
     }
     curr = curr -> next;
@@ -394,8 +395,8 @@ node *get_node_by_label_str(graph *g, char *label) {
 edge *get_edge_by_src_and_dst_int(graph *g, int src_label, int dst_label) {
   edge *curr = g -> edge_list -> hd;
   while (curr != NULL) {
-    if (get_edge_src(curr) -> label -> i == src_label &&
-        get_edge_dst(curr) -> label -> i == dst_label) {
+    if (*(get_edge_src(curr) -> label -> i) == src_label &&
+        *(get_edge_dst(curr) -> label -> i) == dst_label) {
       return curr;
     }
     curr = curr -> next;
@@ -419,8 +420,8 @@ edge *get_edge_by_src_and_dst_int_int(graph *g, int src_label, int dst_label) {
   edge *curr = g -> edge_list -> hd;
   while (curr != NULL) {
     if ((curr -> w_typ == INTTYPE || curr -> w_typ == BOOLTYPE) &&
-        get_edge_src(curr) -> label -> i == src_label &&
-        get_edge_dst(curr) -> label -> i == dst_label) {
+        *(get_edge_src(curr) -> label -> i) == src_label &&
+        *(get_edge_dst(curr) -> label -> i) == dst_label) {
       return curr;
     }
     curr = curr -> next;
@@ -433,8 +434,8 @@ edge *get_edge_by_src_and_dst_int_str(graph *g, int src_label, int dst_label) {
   edge *curr = g -> edge_list -> hd;
   while (curr != NULL) {
     if (curr -> w_typ == STRTYPE &&
-        get_edge_src(curr) -> label -> i == src_label &&
-        get_edge_dst(curr) -> label -> i == dst_label) {
+        *(get_edge_src(curr) -> label -> i) == src_label &&
+        *(get_edge_dst(curr) -> label -> i) == dst_label) {
       return curr;
     }
     curr = curr -> next;
@@ -470,6 +471,8 @@ edge *get_edge_by_src_and_dst_str_int(graph *g, char *src_label, char *dst_label
 
 int add_neighbor(node *n, edge *e) {
   if (n != e -> src) return -1;
+
+  if (n -> neighbor_list -> hd == NULL) {}
 
   if (n -> neighbor_list -> hd == NULL) {
     n -> neighbor_list -> hd = create_neighbor_list_item(e);
@@ -559,14 +562,14 @@ int graph_set_node(graph *g, node *n) {
 
     // find the node in the graph
     if (lt == INTTYPE || lt == BOOLTYPE) {
-      n_in_g = get_node_by_label_int(g, n -> label -> i);
+      n_in_g = get_node_by_label_int(g, *(n -> label -> i));
     } else {
       n_in_g = get_node_by_label_str(g, n -> label -> s);
     }
 
     // set its data to the data of n
     if (dt == INTTYPE || dt == BOOLTYPE) {
-      set_node_data_int(n_in_g, n -> data -> i, 1);
+      set_node_data_int(n_in_g, *(n -> data -> i), 1);
     } else if (dt == STRTYPE) {
       set_node_data_str(n_in_g, n -> data -> s, 1);
     }
@@ -862,7 +865,7 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, in
     // Try to find node with same label as neighbor in g_new
     node *neighbor_copy;
     if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
-      neighbor_copy = get_node_by_label_int(g_new, neighbor -> label -> i);
+      neighbor_copy = get_node_by_label_int(g_new, *(neighbor -> label -> i));
     } else if (neighbor -> label_typ == STRTYPE) {
       neighbor_copy = get_node_by_label_str(g_new, neighbor -> label -> s);
     }
@@ -871,7 +874,7 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, in
     if (n_orig == neighbor && neighbor_copy != NULL) {
       // If edge is self-directed, add edge to graph but nothing else
       if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
-        add_edge_int(g_new, e, neighbor_copy -> label -> i, neighbor_copy -> label -> i);
+        add_edge_int(g_new, e, *(neighbor_copy -> label -> i), *(neighbor_copy -> label -> i));
       } else if (neighbor -> label_typ == STRTYPE) {
         add_edge_str(g_new, e, neighbor_copy -> label -> s, neighbor_copy -> label -> s);
       }
@@ -884,7 +887,7 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, in
       }
       
       if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
-        // add_edge_int(g_new, e, n_orig -> label -> i, neighbor_copy -> label -> i);
+        add_edge_int(g_new, e, *(n_orig -> label -> i), *(neighbor_copy -> label -> i));
       } else if (neighbor -> label_typ == STRTYPE) {
         add_edge_str(g_new, e, n_orig -> label -> s, neighbor_copy -> label -> s);
       }
@@ -928,9 +931,9 @@ int find_data_str(graph *g, char *data) {
 
 void print_node(node *n) {
   if (n -> label_typ == INTTYPE) {
-    printf("%d:", n -> label -> i);
+    printf("%d:", *(n -> label -> i));
   } else if (n -> label_typ == BOOLTYPE) {
-    if (n -> label -> i == 0) printf("false:");
+    if (*(n -> label -> i) == 0) printf("false:");
     else printf("true:");
   } else if (n -> label_typ == STRTYPE) {
     printf("\"%s\":", n -> label -> s);
@@ -939,9 +942,9 @@ void print_node(node *n) {
   if (n -> has_val == 0) {
     printf("null");
   } else if (n -> data_typ == INTTYPE) {
-    printf("%d", n -> label -> i);
+    printf("%d", *(n -> data -> i));
   } else if (n -> data_typ == BOOLTYPE) {
-    if (n -> data -> i == 0) printf("false");
+    if (*(n -> data -> i) == 0) printf("false");
     else printf("true");
   } else if (n -> data_typ == STRTYPE) {
     printf("\"%s\"", n -> data -> s);
