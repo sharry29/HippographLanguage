@@ -957,11 +957,13 @@ void print_node(node *n) {
 void print_edge(edge *e) {
   print_node(e -> src);
   printf(" -");
-  if ( e -> w_typ == INTTYPE ) {
-    printf("( %d )", *(int *)e -> w );
+  if (e -> has_val == 0) {
+    printf("( null )");
+  } else if ( e -> w_typ == INTTYPE ) {
+    printf("( %d )", *(int *) e -> w -> i );
   }
   else if( e -> w_typ == STRTYPE ) {
-    printf("( %s )", (char *)e -> w );
+    printf("( %s )", (char *)e -> w -> s );
   }
   printf("> ");
   print_node(e -> dst);
@@ -970,10 +972,24 @@ void print_edge(edge *e) {
 }
 
 void print_graph(graph *g) {
-  edge *e = g -> edge_list -> hd;
-  while (e) {
-    print_edge(e);
-    e = e -> next;
+  node *n = g -> node_list -> hd;
+  while (n) {
+    print_node(n);
+    printf(" -> [");
+
+    neighbor_list_item *nli = n -> neighbor_list -> hd;
+    if (nli) {
+      print_node(nli -> edge -> dst);
+      while (nli -> next) {
+        printf(", ");
+        print_node(nli -> next -> edge -> dst);
+        nli = nli -> next;
+      }
+    }
+
+    printf("]\n");
+    n = n -> next;
   }
+
   return;
 }
