@@ -97,6 +97,8 @@ let check (globals, funcs) =
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
           | "print" ->
              { typ = Void; fname = s; args = []; body = [] }
+          | "has_node" ->
+             { typ = Int; fname = s; args = [(lt, "src")]; body = [] }
           | "neighbors" ->
              { typ = Graph(lt, dt, wt); fname = s; args = [(lt, "label"); (Int, "level"); (Bool, "include_current")]; body = [] }
           | _ -> raise Not_found)
