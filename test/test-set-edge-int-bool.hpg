@@ -1,0 +1,5 @@
+int main() {
+	graph<int:int, bool> g = [1:1 <(true)> 2:9];
+	g.set_edge(1; 2; false);
+	return 0;
+}

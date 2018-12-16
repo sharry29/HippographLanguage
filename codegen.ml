@@ -90,13 +90,31 @@ let translate (globals, functions) =
   let graph_set_edge_int_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t; i32_t |] in
   let graph_set_edge_int_int_func : L.llvalue = L.declare_function "graph_set_edge_int_int" graph_set_edge_int_int_t the_module in
 
+  let graph_set_edge_bool_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t; i1_t; i32_t |] in
+  let graph_set_edge_bool_int_func : L.llvalue = L.declare_function "graph_set_edge_int_int" graph_set_edge_bool_int_t the_module in
+
+  let graph_set_edge_str_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t; i1_t |] in
+  let graph_set_edge_str_bool_func : L.llvalue = L.declare_function "graph_set_edge_str_int" graph_set_edge_str_bool_t the_module in
+
+  let graph_set_edge_bool_str_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t; i1_t; str_t |] in
+  let graph_set_edge_bool_str_func : L.llvalue = L.declare_function "graph_set_edge_int_str" graph_set_edge_bool_str_t the_module in
+
+  let graph_set_edge_int_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t; i1_t |] in
+  let graph_set_edge_int_bool_func : L.llvalue = L.declare_function "graph_set_edge_int_int" graph_set_edge_int_bool_t the_module in
+
+  let graph_set_edge_bool_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t; i1_t; i1_t |] in
+  let graph_set_edge_bool_bool_func : L.llvalue = L.declare_function "graph_set_edge_int_int" graph_set_edge_bool_bool_t the_module in
+
   let graph_set_edge_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t |] in
   let graph_set_edge_int_func : L.llvalue = L.declare_function "graph_set_edge_int" graph_set_edge_int_t the_module in
 
    let graph_set_edge_str_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t |] in
   let graph_set_edge_str_func : L.llvalue = L.declare_function "graph_set_edge_str" graph_set_edge_str_t the_module in
 
- let graph_set_edge_str_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t; i32_t |] in
+   let graph_set_edge_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t; i1_t |] in
+  let graph_set_edge_bool_func : L.llvalue = L.declare_function "graph_set_edge_int" graph_set_edge_bool_t the_module in
+
+  let graph_set_edge_str_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t; i32_t |] in
   let graph_set_edge_str_int_func : L.llvalue = L.declare_function "graph_set_edge_str_int" graph_set_edge_str_int_t the_module in
 
   let graph_set_edge_int_str_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t; str_t |] in
@@ -355,7 +373,12 @@ let translate (globals, functions) =
              let dst' = expr vars builder dst in
              let w' = expr vars builder w in
              (match (src_typ, w_typ) with
+             | (A.Int, A.Bool) -> L.build_call graph_set_edge_int_bool_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.Int, A.Int) -> L.build_call graph_set_edge_int_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
+             | (A.Bool, A.Bool) -> L.build_call graph_set_edge_bool_bool_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
+             | (A.Bool, A.Int) -> L.build_call graph_set_edge_bool_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
+             | (A.String, A.Bool) -> L.build_call graph_set_edge_str_bool_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
+             | (A.Bool, A.String) -> L.build_call graph_set_edge_bool_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.String, A.Int) -> L.build_call graph_set_edge_str_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.Int, A.String) -> L.build_call graph_set_edge_int_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.String, A.String) -> L.build_call graph_set_edge_str_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder)
@@ -364,8 +387,9 @@ let translate (globals, functions) =
              let src' = expr vars builder src in
              let dst' = expr vars builder dst in
              (match src_typ with
-             | A.Int -> L.build_call graph_set_edge_int_func [| g_ptr; src'; dst' |] "tmp_data" builder
-             | A.String -> L.build_call graph_set_edge_str_func [| g_ptr; src'; dst' |] "tmp_data" builder)
+              | A.Int -> L.build_call graph_set_edge_int_func [| g_ptr; src'; dst' |] "tmp_data" builder
+              | A.String -> L.build_call graph_set_edge_str_func [| g_ptr; src'; dst' |] "tmp_data" builder
+              | A.Bool -> L.build_call graph_set_edge_bool_func [| g_ptr; src'; dst' |] "tmp_data" builder)
           | _ -> raise A.Unsupported_constructor)
     | "set_data" ->
          (match args with
