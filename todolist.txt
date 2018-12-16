@@ -7,8 +7,8 @@
         * [DONE] set_node
         * [DONE] remove_edge
         * [DONE] set_edge (irina)
-        * remove_node (ben, irina)
-        * has_node (ben, irina)
+        * [DONE] remove_node (ben, irina)
+        * [DONE] has_node (ben, irina)
         * are_neighbors (ben, harry)
         * is_empty (ben, harry)
         * print (ben, yasu)

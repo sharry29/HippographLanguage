@@ -762,14 +762,14 @@ int remove_node_str(graph *g, char *label){
   return -1;
 }
 
-int has_node_int(graph *g, int name) {
+int graph_has_node_int(graph *g, int name) {
   if (get_node_by_label_int(g, name)) {
     return 0;
   }
   return -1;
 }
 
-int has_node_str(graph *g, char *name) {
+int graph_has_node_str(graph *g, char *name) {
   if (get_node_by_label_str(g, name)) {
     return 0;
   }

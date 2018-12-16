@@ -1,0 +1,7 @@
+int main() {
+	graph<string, int> g = ["hello" <(10)> "there"; "!"];
+	int result1 = g.remove_node("!!");
+  print_int(result1);
+  int result2 = g.remove_node("hello");
+  print_int(result2);
+}

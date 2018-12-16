@@ -87,6 +87,15 @@ let translate (globals, functions) =
   let get_node_data_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_node_data_func : L.llvalue = L.declare_function "get_node_data" get_node_data_t the_module in
 
+  let graph_has_node_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t |] in
+  let graph_has_node_int_func : L.llvalue = L.declare_function "graph_has_node_int" graph_has_node_int_t the_module in
+
+  let graph_has_node_str_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t |] in
+  let graph_has_node_str_func : L.llvalue = L.declare_function "graph_has_node_str" graph_has_node_str_t the_module in
+
+  let graph_has_node_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t |] in
+  let graph_has_node_bool_func : L.llvalue = L.declare_function "graph_has_node_int" graph_has_node_bool_t the_module in
+
   let graph_set_edge_int_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t; i32_t |] in
   let graph_set_edge_int_int_func : L.llvalue = L.declare_function "graph_set_edge_int_int" graph_set_edge_int_int_t the_module in
 
@@ -378,6 +387,16 @@ let translate (globals, functions) =
          | A.String -> ret
          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
          | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+    | "has_node" ->
+         (match args with
+          | ((n_typ, _) as n) :: [] ->
+            let g_ptr = expr vars builder e in
+            let n' = expr vars builder n in
+            (match n_typ with
+             | A.Int -> L.build_call graph_has_node_int_func [| g_ptr; n' |] "tmp_data" builder
+             | A.String -> L.build_call graph_has_node_str_func [| g_ptr; n' |] "tmp_data" builder
+             | A.Bool -> L.build_call graph_has_node_bool_func [| g_ptr; n' |] "tmp_data" builder)
+          | _ -> raise A.Unsupported_constructor)
     | "get_data" ->
          let n_ptr = expr vars builder e in
          let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
