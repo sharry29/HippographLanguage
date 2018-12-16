@@ -491,12 +491,6 @@ let translate (globals, functions) =
              | A.String -> L.build_call find_data_str_func [| g_ptr; d' |] "find_data" builder
              | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
-    | "weight" ->
-         let n_ptr = expr vars builder e in
-         (match ty with
-          | A.Int -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
-          | A.Bool -> L.build_call get_edge_w_int_func [| n_ptr |] "tmp_data" builder
-          | A.String -> L.build_call get_edge_w_str_func [| n_ptr |] "tmp_data" builder)
     in
  
     let add_terminal builder instr =

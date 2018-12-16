@@ -62,14 +62,6 @@ let check (globals, funcs) =
   (* Return a method from our symbol table *)
   let find_method libtyp s margs=
     try match libtyp with
-        | Edge(wt) ->
-            (match s with
-            | "weight" ->
-              if wt = Void
-              then raise (Failure ("edge " ^ s ^ " cannot be applied to void weights"))
-              else { typ = wt; fname = s; args = []; body = [] }
-            | _ ->
-              raise Not_found)
         | Node(lt, dt) ->
            (match s with
             | "get_data" ->
@@ -363,7 +355,6 @@ let check (globals, funcs) =
                     (fdecls', vars, SExpr (expr fdecls' vars e))
             | _ -> 
                *)(fdecls, vars, SExpr (expr fdecls vars e))
-      (* TODO: Start *)
       | For (e1, e2, e3, st) -> 
           let (_, _, st') = check_stmt fdecls vars st in
           (fdecls, vars, SFor (expr fdecls vars e1, check_bool_expr fdecls vars e2, expr fdecls vars e3, st'))
@@ -389,6 +380,7 @@ let check (globals, funcs) =
           let (_, _, b1') = check_stmt fdecls vars b1 in
           let (_, _, b2') = check_stmt fdecls vars b2 in
           (fdecls, vars, SIf (check_bool_expr fdecls vars p, b1', b2'))
+      (* TODO: Start *)
       | Break -> (fdecls, vars, SBreak)
       | Continue -> (fdecls, vars, SContinue)
       (* TODO: End *)
