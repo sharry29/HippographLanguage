@@ -947,20 +947,30 @@ void print_node(node *n) {
     printf("\"%s\"", n -> data -> s);
   }
 
+  return;
+
 }
 
-char *print_edge(edge *e) {
-  // char *x = strcat(strcat(strcat(strcat(string_of_node(e -> src), "-"), (char *) e -> w), ">"), print_node(e -> dst));
-  // return x;
-  return NULL;
+void print_edge(edge *e) {
+  print_node(e -> src);
+  printf(" -");
+  if ( e -> w_typ == INTTYPE ) {
+    printf("( %d )", *(int *)e -> w );
+  }
+  else if( e -> w_typ == STRTYPE ) {
+    printf("( %s )", (char *)e -> w );
+  }
+  printf("> ");
+  print_node(e -> dst);
+  printf("\n");
+  return;
 }
 
-char *print_graph(graph *g) {
+void print_graph(graph *g) {
   edge *e = g -> edge_list -> hd;
-  char *x;
   while (e) {
-    strcat(x, print_edge(e));
+    print_edge(e);
     e = e -> next;
   }
-  return x;
+  return;
 }
