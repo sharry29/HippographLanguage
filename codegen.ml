@@ -223,6 +223,18 @@ let translate (globals, functions) =
   let is_empty_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t |] in
   let is_empty_func : L.llvalue = L.declare_function "is_empty" is_empty_t the_module in
 
+  let dfs_int_t : L.lltype = L.function_type void_ptr_t [| void_ptr_t; i32_t |] in
+  let dfs_int_func : L.llvalue = L.declare_function "dfs_int" dfs_int_t the_module in
+  
+  let dfs_str_t : L.lltype = L.function_type void_ptr_t [| void_ptr_t; str_t |] in
+  let dfs_str_func : L.llvalue = L.declare_function "dfs_str" dfs_str_t the_module in
+  
+  let bfs_int_t : L.lltype = L.function_type void_ptr_t [| void_ptr_t; i32_t |] in
+  let bfs_int_func : L.llvalue = L.declare_function "bfs_int" bfs_int_t the_module in
+  
+  let bfs_str_t : L.lltype = L.function_type void_ptr_t [| void_ptr_t; str_t |] in
+  let bfs_str_func : L.llvalue = L.declare_function "bfs_str" bfs_str_t the_module in
+
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
       let name = sfdecl.sfname
@@ -542,6 +554,28 @@ let translate (globals, functions) =
              | A.Int -> L.build_call find_data_int_func [| g_ptr; d' |] "find_data" builder
              | A.Bool -> L.build_call find_data_bool_func [| g_ptr; d' |] "find_data" builder
              | A.String -> L.build_call find_data_str_func [| g_ptr; d' |] "find_data" builder
+             | _ -> raise A.Unsupported_constructor)
+          | _ -> raise A.Unsupported_constructor)
+    | "dfs" ->
+         (match e, args with
+          | (A.Graph(lt, _, _), _), l :: [] ->
+            let g_ptr = expr funcs vars builder e in
+            let l' = expr funcs vars builder l in
+            (match lt with
+             | A.Int -> L.build_call dfs_int_func [|g_ptr; l'|] "dfs_int" builder
+             | A.Bool -> L.build_call dfs_int_func [|g_ptr; l'|] "dfs_int" builder
+             | A.String -> L.build_call dfs_str_func [|g_ptr; l'|] "dfs_str" builder
+             | _ -> raise A.Unsupported_constructor)
+          | _ -> raise A.Unsupported_constructor)
+    | "bfs" ->
+         (match e, args with
+          | (A.Graph(lt, _, _), _), l :: [] ->
+            let g_ptr = expr funcs vars builder e in
+            let l' = expr funcs vars builder l in
+            (match lt with
+             | A.Int -> L.build_call bfs_int_func [|g_ptr; l'|] "bfs_int" builder
+             | A.Bool -> L.build_call bfs_int_func [|g_ptr; l'|] "bfs_int" builder
+             | A.String -> L.build_call bfs_str_func [|g_ptr; l'|] "bfs_str" builder
              | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
     in
