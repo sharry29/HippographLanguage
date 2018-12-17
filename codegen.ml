@@ -400,8 +400,8 @@ let translate (globals, functions) =
     | "remove_node" ->
          (match args with
           | ((l_typ, _) as l) :: [] ->
-            let g_ptr = expr vars builder e in
-            let l' = expr vars builder l in 
+            let g_ptr = expr funcs vars builder e in
+            let l' = expr funcs vars builder l in 
             (match l_typ with
              | A.Int -> L.build_call remove_node_int_func [| g_ptr; l' |] "tmp_data" builder
              | A.String -> L.build_call remove_node_str_func [| g_ptr; l' |] "tmp_data" builder
@@ -431,8 +431,8 @@ let translate (globals, functions) =
     | "has_node" ->
          (match args with
           | ((n_typ, _) as n) :: [] ->
-            let g_ptr = expr vars builder e in
-            let n' = expr vars builder n in
+            let g_ptr = expr funcs vars builder e in
+            let n' = expr funcs vars builder n in
             (match n_typ with
              | A.Int -> L.build_call graph_has_node_int_func [| g_ptr; n' |] "tmp_data" builder
              | A.String -> L.build_call graph_has_node_str_func [| g_ptr; n' |] "tmp_data" builder
@@ -447,10 +447,10 @@ let translate (globals, functions) =
     | "set_edge" ->
          (match args with
           | ((src_typ, _) as src) :: ((dst_typ, _) as dst) :: ((w_typ, _) as w) :: [] ->
-             let g_ptr = expr vars builder e in
-             let src' = expr vars builder src in
-             let dst' = expr vars builder dst in
-             let w' = expr vars builder w in
+             let g_ptr = expr funcs vars builder e in
+             let src' = expr funcs vars builder src in
+             let dst' = expr funcs vars builder dst in
+             let w' = expr funcs vars builder w in
              (match (src_typ, w_typ) with
              | (A.Int, A.Bool) -> L.build_call graph_set_edge_int_bool_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.Int, A.Int) -> L.build_call graph_set_edge_int_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
@@ -462,9 +462,9 @@ let translate (globals, functions) =
              | (A.Int, A.String) -> L.build_call graph_set_edge_int_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.String, A.String) -> L.build_call graph_set_edge_str_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder)
           | ((src_typ, _) as src) :: ((dst_typ, _) as dst) :: [] ->
-             let g_ptr = expr vars builder e in
-             let src' = expr vars builder src in
-             let dst' = expr vars builder dst in
+             let g_ptr = expr funcs vars builder e in
+             let src' = expr funcs vars builder src in
+             let dst' = expr funcs vars builder dst in
              (match src_typ with
               | A.Int -> L.build_call graph_set_edge_int_func [| g_ptr; src'; dst' |] "tmp_data" builder
               | A.String -> L.build_call graph_set_edge_str_func [| g_ptr; src'; dst' |] "tmp_data" builder
@@ -493,9 +493,9 @@ let translate (globals, functions) =
     | "are_neighbors" ->
          (match e, args with
           | (A.Graph(lt, _, _), _), src :: dst :: [] ->
-             let g_ptr = expr vars builder e in
-             let src' = expr vars builder src in
-             let dst' = expr vars builder dst in
+             let g_ptr = expr funcs vars builder e in
+             let src' = expr funcs vars builder src in
+             let dst' = expr funcs vars builder dst in
              (match lt with
               | A.Int ->
                 L.build_call are_neighbors_int_func [| g_ptr; src'; dst' |] "are_neighbors" builder
@@ -508,25 +508,25 @@ let translate (globals, functions) =
     | "is_empty" ->
          (match e with
           | (A.Graph(_), _) ->
-             let g_ptr = expr vars builder e in
+             let g_ptr = expr funcs vars builder e in
              L.build_call is_empty_func [| g_ptr |] "is_empty" builder
           | _ -> raise A.Unsupported_constructor)
     | "print" ->
          (match e with
           | (A.Graph(_), _) ->
-             let g_ptr = expr vars builder e in
+             let g_ptr = expr funcs vars builder e in
              L.build_call print_graph_func [| g_ptr |] "" builder
           | (A.Node(_), _) ->
-             let n_ptr = expr vars builder e in
+             let n_ptr = expr funcs vars builder e in
              L.build_call print_node_func [| n_ptr |] "" builder
           | _ -> raise A.Unsupported_constructor)
     | "neighbors" ->
          (match e, args with
           | (A.Graph(_), _), ((nlt, _) as nl) :: level :: include_current :: [] ->
-             let g_ptr = expr vars builder e in
-             let nl' = expr vars builder nl in
-             let level' = expr vars builder level in
-             let include_current' = expr vars builder include_current in
+             let g_ptr = expr funcs vars builder e in
+             let nl' = expr funcs vars builder nl in
+             let level' = expr funcs vars builder level in
+             let include_current' = expr funcs vars builder include_current in
              let n_ptr = (match nlt with
                          | A.Int | A.Bool -> L.build_call get_node_by_label_int_func [| g_ptr; nl' |] "get_node_by_label_int" builder
                          | A.String -> L.build_call get_node_by_label_str_func [| g_ptr; nl' |] "get_node_by_label_str" builder
@@ -536,8 +536,8 @@ let translate (globals, functions) =
     | "find" ->
          (match e, args with
           | (A.Graph(lt, dt, wt), _), d :: [] ->
-            let g_ptr = expr vars builder e in
-            let d' = expr vars builder d in
+            let g_ptr = expr funcs vars builder e in
+            let d' = expr funcs vars builder d in
             (match dt with
              | A.Int -> L.build_call find_data_int_func [| g_ptr; d' |] "find_data" builder
              | A.Bool -> L.build_call find_data_bool_func [| g_ptr; d' |] "find_data" builder
