@@ -383,6 +383,26 @@ node *get_node_by_label_int(graph *g, int label) {
   return curr;
 }
 
+node *get_node_by_label_int_opt(graph *g, int label) {
+  // only used in graph.get_node()
+  node *n = get_node_by_label_int(g, label);
+  if (n == NULL) {
+    n = create_node();
+    set_node_label_int(n, 0);
+  }
+  return n;
+}
+
+node *get_node_by_label_bool_opt(graph *g, int label) {
+  // only used in graph.get_node()
+  node *n = get_node_by_label_int(g, label);
+  if (n == NULL) {
+    n = create_node();
+    set_node_label_bool(n, 0);
+  }
+  return n;
+}
+
 node *get_node_by_label_str(graph *g, char *label) {
   node *curr = g -> node_list -> hd;
   while (curr != NULL) {
@@ -392,6 +412,16 @@ node *get_node_by_label_str(graph *g, char *label) {
     curr = curr -> next;
   }
   return curr;
+}
+
+node *get_node_by_label_str_opt(graph *g, char *label) {
+  // only used in graph.get_node()
+  node *n = get_node_by_label_str(g, label);
+  if (n == NULL) {
+    n = create_node();
+    set_node_label_str(n, "");
+  }
+  return n;
 }
 
 edge *get_edge_by_src_and_dst_int(graph *g, int src_label, int dst_label) {

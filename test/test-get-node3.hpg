@@ -1,0 +1,9 @@
+int main() {
+	graph<bool:string> g = [true:"foo"];
+	node<bool:string> n1 = g.get_node(true);
+	node<bool:string> n2 = g.get_node(false);
+
+	n1.print();
+	print("");
+	n2.print();
+}

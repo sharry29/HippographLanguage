@@ -135,9 +135,15 @@ let translate (globals, functions) =
 
   let get_node_by_label_int_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t |] in
   let get_node_by_label_int_func : L.llvalue = L.declare_function "get_node_by_label_int" get_node_by_label_int_t the_module in
+  let get_node_by_label_int_opt_func : L.llvalue = L.declare_function "get_node_by_label_int_opt" get_node_by_label_int_t the_module in
+
+  let get_node_by_label_bool_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i1_t |] in
+  let get_node_by_label_bool_func : L.llvalue = L.declare_function "get_node_by_label_int" get_node_by_label_bool_t the_module in
+  let get_node_by_label_bool_opt_func : L.llvalue = L.declare_function "get_node_by_label_bool_opt" get_node_by_label_bool_t the_module in
 
   let get_node_by_label_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; str_t |] in
   let get_node_by_label_str_func : L.llvalue = L.declare_function "get_node_by_label_str" get_node_by_label_str_t the_module in
+  let get_node_by_label_str_opt_func : L.llvalue = L.declare_function "get_node_by_label_str_opt" get_node_by_label_str_t the_module in
 
   let print_node_t : L.lltype = L.var_arg_function_type void_t [| void_ptr_t |] in
   let print_node_func : L.llvalue = L.declare_function "print_node" print_node_t the_module in
@@ -162,6 +168,9 @@ let translate (globals, functions) =
 
   let get_edge_w_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t |] in
   let get_edge_w_int_func : L.llvalue = L.declare_function "get_edge_w_int" get_edge_w_int_t the_module in
+
+  let get_edge_w_bool_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t |] in
+  let get_edge_w_bool_func : L.llvalue = L.declare_function "get_edge_w_int" get_edge_w_bool_t the_module in
 
   let get_edge_w_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
   let get_edge_w_str_func : L.llvalue = L.declare_function "get_edge_w_str" get_edge_w_str_t the_module in
@@ -195,6 +204,9 @@ let translate (globals, functions) =
 
   let get_edge_by_src_and_dst_int_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t; i32_t |] in
   let get_edge_by_src_and_dst_int_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_int" get_edge_by_src_and_dst_int_t the_module in
+
+  let get_edge_by_src_and_dst_bool_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i1_t; i1_t |] in
+  let get_edge_by_src_and_dst_bool_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_int" get_edge_by_src_and_dst_bool_t the_module in
 
   let get_edge_by_src_and_dst_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t; void_ptr_t |] in
   let get_edge_by_src_and_dst_str_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_str" get_edge_by_src_and_dst_str_t the_module in
@@ -429,12 +441,22 @@ let translate (globals, functions) =
              let src_ptr = expr funcs vars builder src in
              let dst_ptr = expr funcs vars builder dst in
              let e_ptr = (match src_typ with
-               | A.Int | A.Bool ->
-                  L.build_call get_edge_by_src_and_dst_int_func [| g_ptr; src_ptr; dst_ptr |] "get_edge_by_src_and_dst_int" builder
-               | A.String -> 
-                  L.build_call get_edge_by_src_and_dst_str_func [| g_ptr; src_ptr; dst_ptr |] "get_edge_by_src_and_dst_str" builder
+               | A.Int -> L.build_call get_edge_by_src_and_dst_int_func [| g_ptr; src_ptr; dst_ptr |] "get_edge_by_src_and_dst_int" builder
+               | A.Bool -> L.build_call get_edge_by_src_and_dst_bool_func [| g_ptr; src_ptr; dst_ptr |] "get_edge_by_src_and_dst_bool" builder
+               | A.String -> L.build_call get_edge_by_src_and_dst_str_func [| g_ptr; src_ptr; dst_ptr |] "get_edge_by_src_and_dst_str" builder
                | _ -> raise A.Unsupported_constructor) in
              L.build_call remove_edge_func [| g_ptr; e_ptr |] "remove_edge" builder
+          | _ -> raise A.Unsupported_constructor)
+    | "get_node" ->
+         (match e, args with
+          | (A.Graph(lt, _, _), _), label :: [] ->
+            let g_ptr = expr funcs vars builder e in
+            let label' = expr funcs vars builder label in
+            (match lt with
+             | A.Int -> L.build_call get_node_by_label_int_opt_func [| g_ptr; label' |] "get_node_by_label" builder
+             | A.Bool -> L.build_call get_node_by_label_bool_opt_func [| g_ptr; label' |] "get_node_by_label" builder
+             | A.String -> L.build_call get_node_by_label_str_opt_func [| g_ptr; label' |] "get_node_by_label" builder
+             | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
     | "get_name" ->
          let n_ptr = expr funcs vars builder e in
@@ -711,7 +733,7 @@ let translate (globals, functions) =
            let hd_edge_dst = L.build_call get_edge_dst_func [| hd_edge |] "hd_edge_dst" builder in
            let hd_edge_w = (match wt with
             | A.Int -> L.build_call get_edge_w_int_func [| hd_edge |] "hd_edge_w" builder
-            | A.Bool -> L.build_call get_edge_w_int_func [| hd_edge |] "hd_edge_w" builder
+            | A.Bool -> L.build_call get_edge_w_bool_func [| hd_edge |] "hd_edge_w" builder
             | A.String -> L.build_call get_edge_w_str_func [| hd_edge |] "hd_edge_w" builder) in
            ignore(L.build_store hd_edge edge_ptr builder);
            ignore(L.build_store hd_edge_src src_ptr builder);
@@ -733,7 +755,7 @@ let translate (globals, functions) =
            let next_edge_dst = L.build_call get_edge_dst_func [| next_edge |] "next_edge_dst" builder' in
            let next_edge_w = (match wt with
             | A.Int -> L.build_call get_edge_w_int_func [| next_edge |] "next_edge_w" builder'
-            | A.Bool -> L.build_call get_edge_w_int_func [| next_edge |] "next_edge_w" builder'
+            | A.Bool -> L.build_call get_edge_w_bool_func [| next_edge |] "next_edge_w" builder'
             | A.String -> L.build_call get_edge_w_str_func [| next_edge |] "next_edge_w" builder') in
            ignore(L.build_store next_edge edge_ptr builder');
            ignore(L.build_store next_edge_src src_ptr builder');

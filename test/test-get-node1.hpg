@@ -1,0 +1,12 @@
+int main() {
+	graph<int:string> g = [1:"foo"; 2:"bar"];
+	node<int:string> n1 = g.get_node(1);
+	node<int:string> n2 = g.get_node(2);
+	node<int:string> n3 = g.get_node(3);
+
+	n1.print();
+	print("");
+	n2.print();
+	print("");
+	n3.print();
+}
