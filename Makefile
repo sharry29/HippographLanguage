@@ -20,3 +20,7 @@ redo:
 	ocamlbuild -clean
 	rm -rf ocamlllvm *.diff
 	make hippograph.native
+
+FILE=""
+run: all run.sh
+	./run.sh $(FILE)
