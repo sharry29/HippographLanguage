@@ -610,7 +610,7 @@ int graph_set_node(graph *g, node *n) {
 
 int remove_edge(graph *g, edge *e) {
   if (e == NULL) return -1;
-
+  
   // remove from edge list
   edge *curr_e = g -> edge_list -> hd;
   if (curr_e != NULL && curr_e == e) {
@@ -621,6 +621,8 @@ int remove_edge(graph *g, edge *e) {
       prev = curr_e; 
       curr_e = curr_e -> next; 
     } 
+
+    if (curr_e == NULL) return -1;
 
     prev -> next = curr_e -> next;
     prev = NULL;
@@ -636,6 +638,8 @@ int remove_edge(graph *g, edge *e) {
       prev = curr_nl; 
       curr_nl = curr_nl -> next; 
     } 
+
+    if (curr_nl == NULL) return -1;
 
     prev -> next = curr_nl -> next;
     free(curr_nl);
