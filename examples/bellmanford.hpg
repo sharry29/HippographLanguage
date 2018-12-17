@@ -1,36 +1,48 @@
 int main() {
-    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(-2)> "B":500 -(1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(-1)>"C"; "D"-(-4)>"A"];
+    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(2)> "B":500 -(1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(1)>"C"; "D"-(4)>"A"];
 
-    graph<string:int, int> shortest_paths = [];
+    graph<string:int, int> interim = [];
+    graph<string:int, int> shortest_path = [];
     bool valid = true;
 
     for_node(n : g) {
         node<string:int> n1 = n.get_name():999999;
-        shortest_paths.set_node(n1);
+        interim.set_node(n1);
+        shortest_path.set_node(n1);
+    }
+    
+    for_edge(src, dst, w: g) {
+        interim.set_edge(src.get_name(); dst.get_name(); w);
+        interim.print();
+        print("");
     }
 
     print("ORIGINAL GRAPH:");
     g.print();
 
-    print("");
-    print("shortest_paths BEFORE:");
-    shortest_paths.print();
-
-    for_node(n : shortest_paths) {
-        for_edge(src, dst, w : g) {
-            int src_data = src.get_data();
-            int dst_data = dst.get_data();
-            if (src_data + w < dst_data) {
-                dst.set_data(src_data + w);
-                shortest_paths.set_node(dst);
-                shortest_paths.set_edge(src.get_name(); dst.get_name(); 0);
+    node<string:int> source_n = "S":0;
+    interim.set_node(source_n);
+    for_node(n : interim) {
+      for_edge(src, dst, w : interim) {
+          int src_data = src.get_data();
+          int dst_data = dst.get_data();
+          if (src_data + w < dst_data) {
+            int new_dst_data = src_data + w;
+            node<string:int> new_dst = dst.get_name():new_dst_data;
+            interim.set_node(new_dst);
+            graph<string:int, int> clean = interim.neighbors(dst.get_name());
+            for_node(m : clean) { 
+              print_int(shortest_path.remove_edge(dst.get_name(); m.get_name()));
+            print("hello");
             }
-        }
+            shortest_path.set_edge(src.get_name(); dst.get_name(); w);
+          }
+      }
     }
 
     print("");
     print("shortest_paths AFTER:");
-    shortest_paths.print();
+    shortest_path.print();
     print("");
 
     for_edge(src, dst, w : g) {
@@ -43,7 +55,7 @@ int main() {
     }
 
     if (valid) {
-        shortest_paths.print();
+        shortest_path.print();
     }
 
     return 0;

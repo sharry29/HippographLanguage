@@ -96,6 +96,9 @@ let check (globals, funcs) =
           | "is_empty" ->
              { typ = Bool; fname = s; args = []; body = [] }
           | "neighbors" ->
+             if List.length margs = 1 then
+             { typ = Graph(lt, dt, wt); fname = s; args = [(lt, "label")]; body = [] }
+             else
              { typ = Graph(lt, dt, wt); fname = s; args = [(lt, "label"); (Int, "level"); (Bool, "include_current")]; body = [] }
           | "find" ->
              { typ = Graph(lt, dt, wt); fname = s; args = [(dt, "data")]; body = [] }

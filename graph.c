@@ -592,8 +592,6 @@ int remove_edge(graph *g, edge *e) {
       curr_e = curr_e -> next; 
     } 
 
-    if (curr_e == NULL) return -1; 
-
     prev -> next = curr_e -> next;
     prev = NULL;
   }
@@ -608,8 +606,6 @@ int remove_edge(graph *g, edge *e) {
       prev = curr_nl; 
       curr_nl = curr_nl -> next; 
     } 
-
-    if (curr_nl == NULL) return -1; 
 
     prev -> next = curr_nl -> next;
     free(curr_nl);
@@ -933,6 +929,14 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, in
   free(Q);
 }
 
+graph *neighbors_one_arg(node *n) {
+  graph *g_new = create_graph();
+  if (n == NULL) return g_new;
+  add_neighbors_of_node_to_graph(g_new, n, n, 1);
+
+  return g_new;
+}
+
 graph *neighbors(node *n, int level, int include_current) {
   graph *g_new = create_graph();
   if (level <= 1) level = 1;
@@ -1047,7 +1051,7 @@ void print_graph(graph *g) {
         printf(", ");
         print_node(nli -> next -> edge -> dst);
         printf(" ");
-        print_edge_weight(nli -> edge);
+        print_edge_weight(nli -> next -> edge);
         nli = nli -> next;
       }
     }
