@@ -977,6 +977,10 @@ void print_node(node *n) {
 
 }
 
+graph *dfs(graph *g, int name) {
+  return NULL;
+}
+
 void print_edge_weight(edge *e) {
   if (e -> has_val == 0) {
     printf("(null)");

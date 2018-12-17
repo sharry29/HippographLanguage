@@ -16,3 +16,6 @@ hippograph
 *.log
 /*.out
 *.o
+oopsie
+scratch_sast.ml
+scratch_semant.ml
