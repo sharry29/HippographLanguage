@@ -1151,34 +1151,34 @@ graph *dfs_str(graph *g, char *name) {
   return dfs_graph;
 }
 
-int main() {
-  graph *g = create_graph();
+// int main() {
+//   graph *g = create_graph();
 
-  node *n1 = create_node();
-  set_node_label_str(n1, "1");
-  add_node(g, n1);
+//   node *n1 = create_node();
+//   set_node_label_str(n1, "1");
+//   add_node(g, n1);
 
-  node *n2 = create_node();
-  set_node_label_str(n2, "2");
-  add_node(g, n2);
+//   node *n2 = create_node();
+//   set_node_label_str(n2, "2");
+//   add_node(g, n2);
 
-  node *n3 = create_node();
-  set_node_label_str(n3, "3");
-  add_node(g, n3);
+//   node *n3 = create_node();
+//   set_node_label_str(n3, "3");
+//   add_node(g, n3);
 
-  node *n4 = create_node();
-  set_node_label_str(n4, "4");
-  add_node(g, n4);
+//   node *n4 = create_node();
+//   set_node_label_str(n4, "4");
+//   add_node(g, n4);
 
-  graph_set_edge_str(g, "1", "2");
-  edge *e12 = get_edge_by_src_and_dst_str(g, "1", "2");
-  set_edge_w_int(e12, 123, 1);
+//   graph_set_edge_str(g, "1", "2");
+//   edge *e12 = get_edge_by_src_and_dst_str(g, "1", "2");
+//   set_edge_w_int(e12, 123, 1);
 
-  graph_set_edge_str(g, "1", "3");
-  edge *e13 = get_edge_by_src_and_dst_str(g, "1", "3");
+//   graph_set_edge_str(g, "1", "3");
+//   edge *e13 = get_edge_by_src_and_dst_str(g, "1", "3");
 
-  graph_set_edge_str(g, "3", "4");
-  edge *e34 = get_edge_by_src_and_dst_str(g, "3", "4");
-  bfs_str(g, n1 -> label -> s);
-  // print_graph(g);
-}
+//   graph_set_edge_str(g, "3", "4");
+//   edge *e34 = get_edge_by_src_and_dst_str(g, "3", "4");
+//   bfs_str(g, n1 -> label -> s);
+//   // print_graph(g);
+// }
