@@ -1,0 +1,8 @@
+int main() {
+	graph<bool, int> g = [true <(10)> false];
+	int result1 = g.has_node(true);
+  print_int(result1);
+  g.remove_node(true);
+  int result2 = g.has_node(true);
+  print_int(result2);
+}

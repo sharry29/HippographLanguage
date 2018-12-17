@@ -1,10 +1,13 @@
 int main() {
-	node<int:string> n1 = 1:"foo";
+	node<int:string> n1 = 500:"foo";
 	node<string:bool> n2 = "bar":true;
 	node<bool:string> n3 = false;
+	node<int:int> n4 = 12345:6789;
 	n1.print();
 	print("");
 	n2.print();
 	print("");
 	n3.print();
+	print("");
+	n4.print();
 }

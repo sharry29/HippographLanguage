@@ -60,16 +60,8 @@ let check (globals, funcs) =
   in
 
   (* Return a method from our symbol table *)
-  let find_method libtyp s =
+  let find_method libtyp s margs=
     try match libtyp with
-        | Edge(wt) ->
-            (match s with
-            | "weight" ->
-              if wt = Void
-              then raise (Failure ("edge " ^ s ^ " cannot be applied to void weights"))
-              else { typ = wt; fname = s; args = []; body = [] }
-            | _ ->
-              raise Not_found)
         | Node(lt, dt) ->
            (match s with
             | "get_data" ->
@@ -82,16 +74,27 @@ let check (globals, funcs) =
                { typ = Void; fname = s; args = []; body = [] }
             | _ ->
                raise Not_found)
-        | Graph(st, dt, wt) ->
+        | Graph(lt, dt, wt) ->
           (match s with
           | "set_node" ->
-              { typ = Int; fname = s; args = [(Node(st, wt), "x")]; body = [] }
+              { typ = Int; fname = s; args = [(Node(lt, wt), "x")]; body = [] }
           | "set_edge" ->
-              { typ = Int; fname = s; args = [(st, "src"); (st, "dst"); (wt, "w")]; body = [] }
+              if List.length margs = 2 then
+              { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
+              else
+              { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst"); (wt, "w")]; body = [] }
+          | "remove_node" ->
+              { typ = Int; fname = s; args = [(lt, "x")]; body = [] }
           | "remove_edge" ->
-              { typ = Int; fname = s; args = [(st, "src"); (st, "dst")]; body = [] }
+              { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
           | "print" ->
              { typ = Void; fname = s; args = []; body = [] }
+          | "has_node" ->
+             { typ = Int; fname = s; args = [(lt, "src")]; body = [] }
+          | "neighbors" ->
+             { typ = Graph(lt, dt, wt); fname = s; args = [(lt, "label"); (Int, "level"); (Bool, "include_current")]; body = [] }
+          | "find" ->
+             { typ = Graph(lt, dt, wt); fname = s; args = [(dt, "data")]; body = [] }
           | _ -> raise Not_found)
         | _ -> raise Not_found
     with Not_found -> raise (Failure ("unrecognized method " ^ string_of_typ libtyp ^ "." ^ s))
@@ -174,8 +177,8 @@ let check (globals, funcs) =
 
       match lvt, rvt, e' with
          (* If left expression is a node with bool type data, wrap right expression in a SNodeExpr *)
-      | Node(llt, ldt), _, SNodeExpr((lt, le), d) ->
-         let (dt, de) = coerce_null_to_typ ldt d in
+      | Node(llt, ldt), _, SNodeExpr((lt, _), d) ->
+         let (dt, _) = coerce_null_to_typ ldt d in
          let lt = check_asn llt lt err in
          let dt = check_asn ldt dt err in
          (Node(lt, dt), SAsn(var, (lvt, e')))
@@ -252,7 +255,7 @@ let check (globals, funcs) =
 
     and check_mcall_expr fdecls vars instance mname args =
       let (instance_typ, _) as instance' = expr fdecls vars instance in
-      let md = find_method instance_typ mname in
+      let md = find_method instance_typ mname args in
       let param_length = List.length md.args in
       if List.length args != param_length
       then raise (Failure ("expecting " ^ string_of_int param_length ^
@@ -350,7 +353,6 @@ let check (globals, funcs) =
                     (fdecls', vars, SExpr (expr fdecls' vars e))
             | _ -> 
                *)(fdecls, vars, SExpr (expr fdecls vars e))
-      (* TODO: Start *)
       | For (e1, e2, e3, st) -> 
           let (_, _, st') = check_stmt fdecls vars st in
           (fdecls, vars, SFor (expr fdecls vars e1, check_bool_expr fdecls vars e2, expr fdecls vars e3, st'))
@@ -376,6 +378,7 @@ let check (globals, funcs) =
           let (_, _, b1') = check_stmt fdecls vars b1 in
           let (_, _, b2') = check_stmt fdecls vars b2 in
           (fdecls, vars, SIf (check_bool_expr fdecls vars p, b1', b2'))
+      (* TODO: Start *)
       | Break -> (fdecls, vars, SBreak)
       | Continue -> (fdecls, vars, SContinue)
       (* TODO: End *)

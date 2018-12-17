@@ -1,5 +1,5 @@
 int main() {
-    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(-2)> "B":500 -(1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(-1)>"C"; "D"-(-4)>"A"];
+    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(-2)> "B" -(1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(-1)>"C"; "D"-(-4)>"A"];
 
     graph<string:int, int> shortest_paths = [];
     bool valid = true;
@@ -8,13 +8,6 @@ int main() {
         node<string:int> n1 = n.get_name():999999;
         shortest_paths.set_node(n1);
     }
-
-    print("ORIGINAL GRAPH:");
-    g.print();
-
-    print("");
-    print("shortest_paths BEFORE:");
-    shortest_paths.print();
 
     for_node(n : shortest_paths) {
         for_edge(src, dst, w : g) {
@@ -27,11 +20,6 @@ int main() {
             }
         }
     }
-
-    print("");
-    print("shortest_paths AFTER:");
-    shortest_paths.print();
-    print("");
 
     for_edge(src, dst, w : g) {
         int src_data = src.get_data();

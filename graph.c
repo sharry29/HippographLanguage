@@ -12,7 +12,7 @@ int BOOLTYPE = 4;
 /* data structures */
 
 typedef union primitive {
-  int i;
+  int *i;
   char *s;
   void *v;
 } primitive;
@@ -60,11 +60,22 @@ typedef struct graph {
   edge_list *edge_list;
 } graph;
 
+typedef struct q_item {
+  node *n;
+  struct q_item *next;
+} q_item;
+
+typedef struct queue {
+  q_item *hd;
+  q_item *tl;
+} queue;
+
 /* create primitive of type */
 
 void *create_prim_int(int i) {
   primitive *p = (primitive *) malloc(sizeof(primitive));
-  p -> i = i;
+  p -> i = (int *) malloc(sizeof(int));
+  *(p -> i) = i;
   return (void *) p;
 }
 
@@ -109,9 +120,11 @@ void *create_node() {
 }
 
 int cmp_node_label(node *n1, node *n2) {
+  // return 0 if equal
   int lt = n1 -> label_typ;
   if (lt == INTTYPE || lt == BOOLTYPE) {
-    return n1 -> label -> i == n2 -> label -> i;
+    if (*(n1 -> label -> i) == *(n2 -> label -> i)) return 0;
+    else return -1;
   } else if (lt == STRTYPE) {
     return strcmp(n1 -> label -> s, n2 -> label -> s);
   } else {
@@ -122,12 +135,12 @@ int cmp_node_label(node *n1, node *n2) {
 node *clone_node(node *n) {
   if (n == NULL) return NULL;
 
-  node *n_cp = (node *) malloc(sizeof(node));
-  memcpy(n_cp, n, sizeof(node));
+  node *n_cp = create_node();
   n_cp -> label = clone_primitive(n -> label);
+  n_cp -> label_typ = n -> label_typ;
   n_cp -> data = clone_primitive(n -> data);
-  n_cp -> neighbor_list = NULL;
-  n_cp -> next = NULL;
+  n_cp -> data_typ = n -> data_typ;
+  n_cp -> has_val = n -> has_val;
   return n_cp;
 }
 
@@ -187,7 +200,7 @@ void *get_node_label(node *n) {
   void *label = NULL;
 
   if (typ == INTTYPE || typ == BOOLTYPE) {
-    label = (void *) &(n -> label -> i);
+    label = (void *) n -> label -> i;
   } else if (typ == STRTYPE) {
     label = (void *) n -> label -> s;
   } else if (typ == VOIDTYPE) {
@@ -201,7 +214,7 @@ void *get_node_data(node *n) {
   void *data = NULL;
 
   if (typ == INTTYPE || typ == BOOLTYPE) {
-    data = (void *) &(n -> data -> i);
+    data = (void *) n -> data -> i;
   } else if (typ == STRTYPE) {
     data = (void *) n -> data -> s;
   } else if (typ == VOIDTYPE) {
@@ -215,7 +228,7 @@ void *get_node_data(node *n) {
 int cmp_edge_weight(edge *e1, edge *e2) {
   int lt = e1 -> w_typ;
   if (lt == INTTYPE || lt == BOOLTYPE) {
-    return e1 -> w -> i == e2 -> w -> i;
+    return *(e1 -> w -> i) == *(e2 -> w -> i);
   } else if (lt == STRTYPE) {
     return strcmp(e1 -> w -> s, e2 -> w -> s);
   } else {
@@ -264,7 +277,7 @@ node *get_edge_dst(edge *e) {
 
 int get_edge_w_int(edge *e) {
   if (e == NULL || e -> has_val == 0) return 0;
-  return e -> w -> i;
+  return *(e -> w -> i);
 }
 
 char *get_edge_w_str(edge *e) {
@@ -284,12 +297,12 @@ void *create_edge() {
 
 edge *clone_edge(edge *e) {
   if (e == NULL) return NULL;
-  edge *e_cp = (edge *) malloc(sizeof(edge));
-  memcpy(e_cp, e, sizeof(edge));
+  edge *e_cp = create_edge();
   e_cp -> src = clone_node(e -> src);
   e_cp -> dst = clone_node(e -> dst);
-  e_cp -> has_val = e -> has_val;
   e_cp -> w = clone_primitive(e -> w);
+  e_cp -> w_typ = e -> w_typ;
+  e_cp -> has_val = e -> has_val;
   e_cp -> next = NULL;
   return e_cp;
 }
@@ -362,7 +375,7 @@ edge *get_graph_next_edge(edge *e) {
 node *get_node_by_label_int(graph *g, int label) {
   node *curr = g -> node_list -> hd;
   while (curr != NULL) {
-    if ((curr -> label_typ == INTTYPE || curr -> label_typ == BOOLTYPE) && *(int *) get_node_label(curr) == label) {
+    if ((curr -> label_typ == INTTYPE || curr -> label_typ == BOOLTYPE) && *(curr -> label -> i) == label) {
       return curr;
     }
     curr = curr -> next;
@@ -384,17 +397,55 @@ node *get_node_by_label_str(graph *g, char *label) {
 edge *get_edge_by_src_and_dst_int(graph *g, int src_label, int dst_label) {
   edge *curr = g -> edge_list -> hd;
   while (curr != NULL) {
-    if ((curr -> w_typ == INTTYPE || curr -> w_typ == BOOLTYPE) &&
-        get_edge_src(curr) -> label -> i == src_label &&
-        get_edge_dst(curr) -> label -> i == dst_label) {
+    if (*(get_edge_src(curr) -> label -> i) == src_label &&
+        *(get_edge_dst(curr) -> label -> i) == dst_label) {
       return curr;
     }
     curr = curr -> next;
   }
-  return curr;
+  return NULL;
 }
 
 edge *get_edge_by_src_and_dst_str(graph *g, char *src_label, char *dst_label) {
+  edge *curr = g -> edge_list -> hd;
+  while (curr != NULL) {
+    if (strcmp((char *) (get_edge_src(curr) -> label -> s), src_label) == 0 &&
+        strcmp((char *) (get_edge_dst(curr) -> label -> s), dst_label) == 0) {
+      return curr;
+    }
+    curr = curr -> next;
+  }
+  return NULL;
+}
+
+edge *get_edge_by_src_and_dst_int_int(graph *g, int src_label, int dst_label) {
+  edge *curr = g -> edge_list -> hd;
+  while (curr != NULL) {
+    if ((curr -> w_typ == INTTYPE || curr -> w_typ == BOOLTYPE) &&
+        *(get_edge_src(curr) -> label -> i) == src_label &&
+        *(get_edge_dst(curr) -> label -> i) == dst_label) {
+      return curr;
+    }
+    curr = curr -> next;
+  }
+  return NULL;
+
+}
+
+edge *get_edge_by_src_and_dst_int_str(graph *g, int src_label, int dst_label) {
+  edge *curr = g -> edge_list -> hd;
+  while (curr != NULL) {
+    if (curr -> w_typ == STRTYPE &&
+        *(get_edge_src(curr) -> label -> i) == src_label &&
+        *(get_edge_dst(curr) -> label -> i) == dst_label) {
+      return curr;
+    }
+    curr = curr -> next;
+  }
+  return NULL;
+}
+
+edge *get_edge_by_src_and_dst_str_str(graph *g, char *src_label, char *dst_label) {
   edge *curr = g -> edge_list -> hd;
   while (curr != NULL) {
     if (curr -> w_typ == STRTYPE &&
@@ -404,11 +455,26 @@ edge *get_edge_by_src_and_dst_str(graph *g, char *src_label, char *dst_label) {
     }
     curr = curr -> next;
   }
-  return curr;
+  return NULL;
+}
+
+edge *get_edge_by_src_and_dst_str_int(graph *g, char *src_label, char *dst_label) {
+  edge *curr = g -> edge_list -> hd;
+  while (curr != NULL) {
+    if ((curr -> w_typ == INTTYPE || curr -> w_typ == BOOLTYPE) &&
+        strcmp((char *) (get_edge_src(curr) -> label -> s), src_label) == 0 &&
+        strcmp((char *) (get_edge_dst(curr) -> label -> s), dst_label) == 0) {
+      return curr;
+    }
+    curr = curr -> next;
+  }
+  return NULL;
 }
 
 int add_neighbor(node *n, edge *e) {
   if (n != e -> src) return -1;
+
+  if (n -> neighbor_list -> hd == NULL) {}
 
   if (n -> neighbor_list -> hd == NULL) {
     n -> neighbor_list -> hd = create_neighbor_list_item(e);
@@ -461,9 +527,7 @@ void *add_edge_bool(graph *g, edge *e, int src, int dst) {
 void *add_edge_str(graph *g, edge *e, char *src, char *dst) {
   e -> src = get_node_by_label_str(g, src);
   e -> dst = get_node_by_label_str(g, dst);
-  e -> w = NULL;
   e -> next = NULL;
-  e -> has_val = 0;
 
   // add to neighbors
   if (e -> src == NULL || e -> dst == NULL ||
@@ -476,12 +540,12 @@ void *add_edge_str(graph *g, edge *e, char *src, char *dst) {
 int add_node(graph *g, node *n) {
   if (g -> node_list -> hd == NULL) {
     g -> node_list -> hd = n;
-  } else if (cmp_node_label(g -> node_list -> hd, n)) {
+  } else if (cmp_node_label(g -> node_list -> hd, n) == 0) {
     return -1;
   } else {
     node *curr = g -> node_list -> hd;
     while (curr -> next != NULL) {
-      if (cmp_node_label(curr -> next, n)) return -1;
+      if (cmp_node_label(curr -> next, n) == 0) return -1;
       curr = curr -> next;
     }
     curr -> next = n;
@@ -498,14 +562,14 @@ int graph_set_node(graph *g, node *n) {
 
     // find the node in the graph
     if (lt == INTTYPE || lt == BOOLTYPE) {
-      n_in_g = get_node_by_label_int(g, n -> label -> i);
+      n_in_g = get_node_by_label_int(g, *(n -> label -> i));
     } else {
       n_in_g = get_node_by_label_str(g, n -> label -> s);
     }
 
     // set its data to the data of n
     if (dt == INTTYPE || dt == BOOLTYPE) {
-      set_node_data_int(n_in_g, n -> data -> i, 1);
+      set_node_data_int(n_in_g, *(n -> data -> i), 1);
     } else if (dt == STRTYPE) {
       set_node_data_str(n_in_g, n -> data -> s, 1);
     }
@@ -559,32 +623,74 @@ int remove_edge(graph *g, edge *e) {
   return 0;
 }
 
-int graph_set_edge_int_int(graph *g, int src_label, int dst_label, int w) {
+int graph_set_edge_int(graph *g, int src_label, int dst_label) {
   edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
-  if (add_edge_int(g, e, src_label, dst_label) == NULL) {
+  if (e != NULL)
     remove_edge(g, e);
-    add_edge_int(g, e, src_label, dst_label);
-  }
+
+  edge *new_e = create_edge();
+  set_edge_w_int(new_e, 0, 0);
+  add_edge_int(g, new_e, src_label, dst_label);
+
+  return 0;
+}
+
+int graph_set_edge_str(graph *g, char *src_label, char *dst_label) {
+  edge *e = get_edge_by_src_and_dst_str(g, src_label, dst_label);
+  if (e != NULL)
+    remove_edge(g, e);
+
+  edge *new_e = create_edge();
+  set_edge_w_str(new_e, "", 0);
+  add_edge_str(g, new_e, src_label, dst_label);
+
+  return 0;
+}
+
+int graph_set_edge_int_int(graph *g, int src_label, int dst_label, int w) {
+  edge *e = get_edge_by_src_and_dst_int_int(g, src_label, dst_label);
+  if (e != NULL)
+    remove_edge(g, e);
+
+  edge *new_e = create_edge();
+  set_edge_w_int(new_e, w, 1);
+  add_edge_int(g, new_e, src_label, dst_label);
+
+  return 0;
+}
+
+int graph_set_edge_str_str(graph *g, char *src_label, char *dst_label, char *w) {
+  edge *e = get_edge_by_src_and_dst_str_str(g, src_label, dst_label);
+  if (e != NULL)
+    remove_edge(g, e);
+
+  edge *new_e = create_edge();
+  set_edge_w_str(new_e, w, 1);
+  add_edge_str(g, new_e, src_label, dst_label);
 
   return 0;
 }
 
 int graph_set_edge_str_int(graph *g, char *src_label, char *dst_label, int w) {
-  edge *e = get_edge_by_src_and_dst_str(g, src_label, dst_label);
-  if (add_edge_str(g, e, src_label, dst_label) == NULL) {
+  edge *e = get_edge_by_src_and_dst_str_int(g, src_label, dst_label);
+  if (e != NULL)
     remove_edge(g, e);
-    add_edge_str(g, e, src_label, dst_label);
-  }
+
+  edge *new_e = create_edge();
+  set_edge_w_int(new_e, w, 1);
+  add_edge_str(g, new_e, src_label, dst_label);
 
   return 0;
 }
 
 int graph_set_edge_int_str(graph *g, int src_label, int dst_label, char *w) {
-  edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
-  if (add_edge_int(g, e, src_label, dst_label) == NULL) {
+  edge *e = get_edge_by_src_and_dst_int_str(g, src_label, dst_label);
+  if (e != NULL)
     remove_edge(g, e);
-    add_edge_int(g, e, src_label, dst_label);
-  }
+
+  edge *new_e = create_edge();
+  set_edge_w_str(new_e, w, 1);
+  add_edge_int(g, new_e, src_label, dst_label);
 
   return 0;
 }
@@ -609,47 +715,68 @@ int remove_all_edges(graph *g, node *n) {
   return 0;
 }
 
-
-int remove_node(graph *g, node *n) {
-  if (n->label_typ == INTTYPE || n->label_typ == BOOLTYPE) {
-    node *curr = g -> node_list -> hd;
-    while (curr != NULL) {
-      if ((curr -> label_typ == INTTYPE || curr -> label_typ == BOOLTYPE) && 
-        *(int *) get_node_label(curr->next) == *(int *)get_node_label(n)) {
-        curr -> next = curr -> next -> next;
-        remove_all_edges(g, n);
-        return 1;
-      }
-      curr = curr -> next;
-    }
+int remove_node_int(graph *g, int label){
+  node *curr = g -> node_list -> hd;
+  if (*(int *) get_node_label(curr) == label) {
+    node *n = get_node_by_label_int(g, label);
+    remove_all_edges(g, n);
+    g -> node_list -> hd = curr -> next;
+    free(curr);
     return 0;
   }
-  else if (n->label_typ == STRTYPE) {
-    node *curr = g -> node_list -> hd;
-    while (curr != NULL) {
-      if (curr -> label_typ == STRTYPE && strcmp((char *) get_node_label(curr), (char *)get_node_label(n)) == 0) {
-        curr->next = curr->next->next;
-        remove_all_edges(g, n);
-        return 1;
-      }
-      curr = curr -> next;
+  node *prev = curr;
+  curr = curr -> next;
+  while (curr != NULL) {
+    if (*(int *) get_node_label(curr) == label) {
+      node *n = get_node_by_label_int(g, label);
+      remove_all_edges(g, n);
+      prev -> next = curr -> next;
+      free(curr);
+      return 0;
     }
+    prev = curr;
+    curr = curr -> next;
   }
-  return 0;
+  return -1;
+}
+ 
+int remove_node_str(graph *g, char *label){
+  node *curr = g -> node_list -> hd;
+  if (strcmp((char *) get_node_label(curr), label) == 0) {
+    node *n = get_node_by_label_str(g, label);
+    remove_all_edges(g, n);
+    g -> node_list -> hd = curr -> next;
+    free(curr);
+    return 0;
+  }
+  node *prev = curr;
+  curr = curr -> next;
+  while (curr != NULL) {
+    if (strcmp((char *) get_node_label(curr), label) == 0) {
+      node *n = get_node_by_label_str(g, label);
+      remove_all_edges(g, n);
+      prev -> next = curr -> next;
+      free(curr);
+      return 0;
+    }
+    prev = curr;
+    curr = curr -> next;
+  }
+  return -1;
 }
 
-int has_node_int(graph *g, int name) {
+int graph_has_node_int(graph *g, int name) {
   if (get_node_by_label_int(g, name)) {
-    return 1;
+    return 0;
   }
-  return 0;
+  return -1;
 }
 
-int has_node_str(graph *g, char *name) {
+int graph_has_node_str(graph *g, char *name) {
   if (get_node_by_label_str(g, name)) {
-    return 1;
+    return 0;
   }
-  return 0;
+  return -1;
 }
 
 int are_neighbors_int(graph *g, int from_name, int to_name) {
@@ -681,27 +808,151 @@ int is_empty(graph *g) {
   return 1;
 }
 
-int neighbors_int_name(graph *g, int name, int level, int include_current) {
-  return 0;
+/* GRAPH TRAVERSAL */
+
+queue *create_queue() {
+  queue *Q = (queue *) malloc(sizeof(queue));
+  Q -> hd = NULL;
+  Q -> tl = NULL;
+  return Q;  
 }
 
-int neighbors_str_name(graph *g, char *name, int level, int include_current) {
-  return 0;
+q_item *create_q_item(node *n) {
+  q_item *i = (q_item *) malloc(sizeof(q_item));
+  i -> n = n;
+  i -> next = NULL;
+  return i;
 }
 
-int find_data_int(graph *g, int data) {
-  return 0;
+void enqueue(queue *Q, node *n) {
+  if (Q -> tl == NULL) {
+    Q -> hd = create_q_item(n);
+    Q -> tl = Q -> hd;
+  } else {
+    Q -> tl -> next = create_q_item(n);
+    Q -> tl = Q -> tl -> next;
+  }
 }
 
-int find_data_str(graph *g, char *data) {
-  return 0;
+node *dequeue(queue *Q) {
+  if (Q -> hd == NULL) {
+    return NULL;
+  } else {
+    node *n = Q -> hd -> n;
+    q_item *tmp = Q -> hd;
+    Q -> hd = Q -> hd -> next;
+    free(tmp);
+    if (Q -> hd == NULL) Q -> tl = NULL;
+    return n;
+  }
 }
+
+void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, int level) {
+  if (level == 0) return;
+
+  queue *Q = create_queue();
+
+  neighbor_list_item *nli = n_orig -> neighbor_list -> hd;
+  while (nli != NULL) {
+    node *neighbor = nli -> edge -> dst;
+
+    // Don't include neighbor if it is the root node
+    if (neighbor == n_root) {
+      nli = nli -> next;
+      continue;
+    }
+
+    // Try to find node with same label as neighbor in g_new
+    node *neighbor_copy;
+    if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+      neighbor_copy = get_node_by_label_int(g_new, *(neighbor -> label -> i));
+    } else if (neighbor -> label_typ == STRTYPE) {
+      neighbor_copy = get_node_by_label_str(g_new, neighbor -> label -> s);
+    }
+
+    edge *e = create_edge();
+    if (n_orig == neighbor && neighbor_copy != NULL) {
+      // If edge is self-directed, add edge to graph but nothing else
+      if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+        add_edge_int(g_new, e, *(neighbor_copy -> label -> i), *(neighbor_copy -> label -> i));
+      } else if (neighbor -> label_typ == STRTYPE) {
+        add_edge_str(g_new, e, neighbor_copy -> label -> s, neighbor_copy -> label -> s);
+      }
+    } else {
+      // If node doesn't yet exist in g_new, create one and add original neighbor to processing queue
+      if (neighbor_copy == NULL) {
+        neighbor_copy = clone_node(neighbor);
+        add_node(g_new, neighbor_copy);
+        enqueue(Q, neighbor);
+      }
+      
+      if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
+        add_edge_int(g_new, e, *(n_orig -> label -> i), *(neighbor_copy -> label -> i));
+      } else if (neighbor -> label_typ == STRTYPE) {
+        add_edge_str(g_new, e, n_orig -> label -> s, neighbor_copy -> label -> s);
+      }
+    }
+
+    nli = nli -> next;
+  }
+
+  while (Q -> tl != NULL) {
+    add_neighbors_of_node_to_graph(g_new, n_root, dequeue(Q), level - 1);
+  }
+
+  free(Q);
+}
+
+graph *neighbors(node *n, int level, int include_current) {
+  graph *g_new = create_graph();
+  if (level <= 1) level = 1;
+
+  if (n == NULL) return g_new;
+
+  if (include_current != 0) {
+    add_node(g_new, clone_node(n));
+    add_neighbors_of_node_to_graph(g_new, NULL, n, level);
+  } else {
+    add_neighbors_of_node_to_graph(g_new, n, n, level);
+  }
+
+  return g_new;
+}
+
+graph *find_data_int(graph *g, int data) {
+  node *n = g -> node_list -> hd;
+  graph *g_new = create_graph();
+  while (n != NULL) {
+    if (n -> has_val == 1 && (n -> data_typ == INTTYPE || n -> data_typ == BOOLTYPE) && *(n -> data -> i) == data) {
+      node *n_cp = clone_node(n);
+      add_node(g_new, n_cp);
+    }
+    n = n -> next;
+  }
+  return g_new;
+}
+
+graph *find_data_str(graph *g, char *data) {
+  node *n = g -> node_list -> hd;
+  graph *g_new = create_graph();
+
+  while (n != NULL) {
+    if (n -> has_val == 1 && n -> data_typ == STRTYPE && strcmp(n -> data -> s, data) == 0) {
+      node *n_cp = clone_node(n);
+      add_node(g_new, n_cp);
+    }
+    n = n -> next;
+  }
+  return g_new;
+}
+
+/* PRINTING */
 
 void print_node(node *n) {
   if (n -> label_typ == INTTYPE) {
-    printf("%d:", n -> label -> i);
+    printf("%d:", *(n -> label -> i));
   } else if (n -> label_typ == BOOLTYPE) {
-    if (n -> label -> i == 0) printf("false:");
+    if (*(n -> label -> i) == 0) printf("false:");
     else printf("true:");
   } else if (n -> label_typ == STRTYPE) {
     printf("\"%s\":", n -> label -> s);
@@ -710,13 +961,15 @@ void print_node(node *n) {
   if (n -> has_val == 0) {
     printf("null");
   } else if (n -> data_typ == INTTYPE) {
-    printf("%d", n -> label -> i);
+    printf("%d", *(n -> data -> i));
   } else if (n -> data_typ == BOOLTYPE) {
-    if (n -> data -> i == 0) printf("false");
+    if (*(n -> data -> i) == 0) printf("false");
     else printf("true");
   } else if (n -> data_typ == STRTYPE) {
     printf("\"%s\"", n -> data -> s);
   }
+
+  return;
 
 }
 
@@ -724,18 +977,73 @@ graph *dfs(graph *g, int name) {
   return NULL;
 }
 
-char *print_edge(edge *e) {
-  // char *x = strcat(strcat(strcat(strcat(string_of_node(e -> src), "-"), (char *) e -> w), ">"), print_node(e -> dst));
-  // return x;
-  return NULL;
+void print_edge_weight(edge *e) {
+  if (e -> has_val == 0) {
+    printf("(null)");
+  } else if (e -> w_typ == INTTYPE) {
+    printf("(%d)", *(int *) e -> w -> i );
+  } else if (e -> w_typ == BOOLTYPE) {
+    if (*(int *) e -> w -> i == 1) printf("(true)");
+    else printf("(false)");
+  } else if (e -> w_typ == STRTYPE) {
+    printf("(%s)", (char *)e -> w -> s );
+  }
+  return;
 }
 
-char *print_graph(graph *g) {
-  edge *e = g -> edge_list -> hd;
-  char *x;
-  while (e) {
-    strcat(x, print_edge(e));
-    e = e -> next;
+void print_graph(graph *g) {
+  node *n = g -> node_list -> hd;
+  while (n) {
+    print_node(n);
+    printf(" -> [");
+    neighbor_list_item *nli = n -> neighbor_list -> hd;
+    if (nli) {
+      print_node(nli -> edge -> dst);
+      printf(" ");
+      print_edge_weight(nli -> edge);
+      while (nli -> next) {
+        printf(", ");
+        print_node(nli -> next -> edge -> dst);
+        printf(" ");
+        print_edge_weight(nli -> edge);
+        nli = nli -> next;
+      }
+    }
+
+    printf("]\n");
+    n = n -> next;
   }
-  return x;
+
+  return;
 }
+
+// int main() {
+//   graph *g = create_graph();
+
+//   node *n1 = create_node();
+//   set_node_label_str(n1, "1");
+//   add_node(g, n1);
+
+//   node *n2 = create_node();
+//   set_node_label_str(n2, "2");
+//   add_node(g, n2);
+
+//   node *n3 = create_node();
+//   set_node_label_str(n3, "3");
+//   add_node(g, n3);
+
+//   graph_set_edge_str(g, "1", "2");
+//   edge *e12 = get_edge_by_src_and_dst_str(g, "1", "2");
+//   set_edge_w_int(e12, 123, 1);
+
+//   graph_set_edge_str(g, "2", "1");
+//   edge *e21 = get_edge_by_src_and_dst_str(g, "2", "1");
+
+//   graph_set_edge_str(g, "2", "3");
+//   edge *e23 = get_edge_by_src_and_dst_str(g, "2", "3");
+
+//   graph_set_edge_str(g, "3", "2");
+//   edge *e32 = get_edge_by_src_and_dst_str(g, "3", "2");
+
+//   print_graph(g);
+// }

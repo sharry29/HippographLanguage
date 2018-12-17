@@ -1,0 +1,7 @@
+int main() {
+	graph<int, int> g = [1 <(10)> 2; 3];
+	int result1 = g.has_node(1);
+  print_int(result1);
+  int result2 = g.has_node(5);
+  print_int(result2);
+}

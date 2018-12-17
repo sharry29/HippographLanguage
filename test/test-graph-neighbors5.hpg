@@ -1,0 +1,14 @@
+int main() {
+	graph<int> g = [1 -()- 2 -()- 3 -()- 4 -()- 2];
+	graph<int> g_sub1 = g.neighbors(1; 4; false);
+	for_node (n : g_sub1) {
+		n.print();
+		print("");
+	}
+	print("");
+	graph<int> g_sub2 = g.neighbors(1; 4; true);
+	for_node (n : g_sub2) {
+		n.print();
+		print("");
+	}
+}
