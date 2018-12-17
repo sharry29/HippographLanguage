@@ -202,9 +202,7 @@ let check (globals, funcs) =
          (t, SAsn(var, (t, SGraphExpr(nl', el'))))
       | Fun, Fun, SFunsig(ty, bl, (_, fn_body)) ->
           let (_, new_expr) = expr fdecls vars e in
-(*             (if StringMap.mem "f" fdecls(* '  *)then print_string("Here") else print_string("not here"));
- *)          (check_asn lvt rvt err, SAsn(var, (rvt, new_expr)))
-          (*If we are storing an anonymous function in a variable, we need to add that*)
+              (check_asn lvt rvt err, SAsn(var, (rvt, new_expr)))
      
       | _ ->
          (check_asn lvt rvt err, SAsn(var, (rvt, e')))

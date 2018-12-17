@@ -720,6 +720,10 @@ void print_node(node *n) {
 
 }
 
+graph *dfs(graph *g, int name) {
+  return NULL;
+}
+
 char *print_edge(edge *e) {
   // char *x = strcat(strcat(strcat(strcat(string_of_node(e -> src), "-"), (char *) e -> w), ">"), print_node(e -> dst));
   // return x;
