@@ -776,32 +776,36 @@ int graph_has_node_str(graph *g, char *name) {
 }
 
 int are_neighbors_int(graph *g, int from_name, int to_name) {
-  edge *e = g -> edge_list -> hd;
-  while (e != NULL) {
-    if ((*(int *) get_node_label(e -> src) == from_name) && (*(int *) get_node_label(e -> dst) == to_name) ) {
-      return 1;
-    }
-    e = e -> next;
+  node *src = get_node_by_label_int(g, from_name);
+  if (src == NULL || src -> neighbor_list -> hd == NULL) return 0;
+
+  neighbor_list_item *nli = src -> neighbor_list -> hd;
+  while (nli != NULL) {
+    node *dst = nli -> edge -> dst;
+    if (*(dst -> label -> i) == to_name) return 1;
+    nli = nli -> next;
   }
   return 0;
 }
 
 int are_neighbors_str(graph *g, char *from_name, char *to_name) {
-  edge *e = g -> edge_list -> hd;
-  while (e != NULL) {
-    if (((char *) get_node_label(e -> src) == from_name) && ((char *) get_node_label(e -> dst) == to_name) ) {
-      return 1;
-    }
-    e = e -> next;
+  node *src = get_node_by_label_str(g, from_name);
+  if (src == NULL || src -> neighbor_list -> hd == NULL) return 0;
+
+  neighbor_list_item *nli = src -> neighbor_list -> hd;
+  while (nli != NULL) {
+    node *dst = nli -> edge -> dst;
+    if (strcmp(dst -> label -> s, to_name) == 0) return 1;
+    nli = nli -> next;
   }
   return 0;
 }
 
 int is_empty(graph *g) {
   if (g -> node_list -> hd) {
-    return 0;
+    return 1; // true
   }
-  return 1;
+  return 0; // false
 }
 
 /* GRAPH TRAVERSAL */
@@ -841,6 +845,32 @@ node *dequeue(queue *Q) {
     if (Q -> hd == NULL) Q -> tl = NULL;
     return n;
   }
+}
+
+void push(queue *Q, node *n) {
+  if (Q -> hd == NULL) {
+    Q -> hd = create_q_item(n);
+  } else {
+    q_item *curr = Q -> hd;
+    Q -> hd = create_q_item(n);
+    Q -> hd -> next = curr;
+  }
+}
+
+node *pop(queue *Q) {
+  if (Q -> hd == NULL) {
+    return NULL;
+  } else {
+    q_item *fst = Q -> hd;
+    Q -> hd = fst -> next;
+    node *n = fst -> n;
+    free(fst);
+    return n;
+  }
+}
+
+int is_empty_q(queue *Q) {
+  return (Q -> hd == NULL);
 }
 
 void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, int level) {
@@ -977,6 +1007,22 @@ void print_node(node *n) {
 
 }
 
+int search_node_list(node_list *nl, node *n) {
+  node *curr = nl -> hd;
+  while (curr != NULL) {
+    if ((curr -> label) == (n -> label)) {return 1;}
+    curr = curr -> next;
+  }
+  return 0;
+}
+
+void add_node_to_list(node_list *nl, node *n) {
+  node *curr = nl -> hd;
+  n -> next = curr;
+  nl -> hd = n;
+}
+
+
 void print_edge_weight(edge *e) {
   if (e -> has_val == 0) {
     printf("(null)");
@@ -1017,33 +1063,126 @@ void print_graph(graph *g) {
   return;
 }
 
-// int main() {
-//   graph *g = create_graph();
+graph *bfs_int(graph *g, int name) {
+  queue *Q = create_queue();
+  node_list *seen = create_node_list();
+  graph *bfs_graph = create_graph();
+  node *start = get_node_by_label_int(g, name);
 
-//   node *n1 = create_node();
-//   set_node_label_str(n1, "1");
-//   add_node(g, n1);
+  enqueue(Q, start);
+  while (is_empty_q(Q) == 0) {
+    node *next = dequeue(Q);
+    if (search_node_list(seen, next) == 0) {
+      add_node_to_list(seen, next);
+      add_node(bfs_graph, clone_node(next));
+      neighbor_list *neighbors = next -> neighbor_list;
+      neighbor_list_item *neighbor = neighbors -> hd;
+      while (neighbor != NULL) {
+        enqueue(Q, neighbor -> edge -> dst);
+        neighbor = neighbor -> next;
+      }
+    }
+  }
+  return bfs_graph;
+}
 
-//   node *n2 = create_node();
-//   set_node_label_str(n2, "2");
-//   add_node(g, n2);
+graph *bfs_str(graph *g, char *name) {
+  queue *Q = create_queue();
+  node_list *seen = create_node_list();
+  graph *bfs_graph = create_graph();
+  node *start = get_node_by_label_str(g, name);
 
-//   node *n3 = create_node();
-//   set_node_label_str(n3, "3");
-//   add_node(g, n3);
+  enqueue(Q, start);
+  while (is_empty_q(Q) == 0) {
+    node *next = dequeue(Q);
+    if (search_node_list(seen, next) == 0) {
+      add_node_to_list(seen, next);
+      add_node(bfs_graph, clone_node(next));
+      neighbor_list *neighbors = next -> neighbor_list;
+      neighbor_list_item *neighbor = neighbors -> hd;
+      while (neighbor != NULL) {
+        enqueue(Q, neighbor -> edge -> dst);
+        neighbor = neighbor -> next;
+      }
+    }
+  }
+  return bfs_graph;
+}
 
-//   graph_set_edge_str(g, "1", "2");
-//   edge *e12 = get_edge_by_src_and_dst_str(g, "1", "2");
-//   set_edge_w_int(e12, 123, 1);
+graph *dfs_int(graph *g, int name) {
+  queue *Q = create_queue();
+  node_list *seen = create_node_list();
+  graph *dfs_graph = create_graph();
+  node *start = get_node_by_label_int(g, name);
 
-//   graph_set_edge_str(g, "2", "1");
-//   edge *e21 = get_edge_by_src_and_dst_str(g, "2", "1");
+  push(Q, start);
+  while (is_empty_q(Q) == 0) {
+    node *next = pop(Q);
+    if (search_node_list(seen, next) == 0) {
+      add_node_to_list(seen, next);
+      add_node(dfs_graph, clone_node(next));
+      neighbor_list *neighbors = next -> neighbor_list;
+      neighbor_list_item *neighbor = neighbors -> hd;
+      while (neighbor != NULL) {
+        push(Q, neighbor -> edge -> dst);
+        neighbor = neighbor -> next;
+      }
+    }
+  }
+  return dfs_graph;
+}
 
-//   graph_set_edge_str(g, "2", "3");
-//   edge *e23 = get_edge_by_src_and_dst_str(g, "2", "3");
+graph *dfs_str(graph *g, char *name) {
+  queue *Q = create_queue();
+  node_list *seen = create_node_list();
+  graph *dfs_graph = create_graph();
+  node *start = get_node_by_label_str(g, name);
 
-//   graph_set_edge_str(g, "3", "2");
-//   edge *e32 = get_edge_by_src_and_dst_str(g, "3", "2");
+  push(Q, start);
+  while (is_empty_q(Q) == 0) {
+    node *next = pop(Q);
+    if (search_node_list(seen, next) == 0) {
+      add_node_to_list(seen, next);
+      add_node(dfs_graph, clone_node(next));
+      neighbor_list *neighbors = next -> neighbor_list;
+      neighbor_list_item *neighbor = neighbors -> hd;
+      while (neighbor != NULL) {
+        push(Q, neighbor -> edge -> dst);
+        neighbor = neighbor -> next;
+      }
+    }
+  }
+  return dfs_graph;
+}
 
-//   print_graph(g);
-// }
+int main() {
+  graph *g = create_graph();
+
+  node *n1 = create_node();
+  set_node_label_str(n1, "1");
+  add_node(g, n1);
+
+  node *n2 = create_node();
+  set_node_label_str(n2, "2");
+  add_node(g, n2);
+
+  node *n3 = create_node();
+  set_node_label_str(n3, "3");
+  add_node(g, n3);
+
+  node *n4 = create_node();
+  set_node_label_str(n4, "4");
+  add_node(g, n4);
+
+  graph_set_edge_str(g, "1", "2");
+  edge *e12 = get_edge_by_src_and_dst_str(g, "1", "2");
+  set_edge_w_int(e12, 123, 1);
+
+  graph_set_edge_str(g, "1", "3");
+  edge *e13 = get_edge_by_src_and_dst_str(g, "1", "3");
+
+  graph_set_edge_str(g, "3", "4");
+  edge *e34 = get_edge_by_src_and_dst_str(g, "3", "4");
+  bfs_str(g, n1 -> label -> s);
+  // print_graph(g);
+}
