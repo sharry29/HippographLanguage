@@ -198,6 +198,9 @@ let translate (globals, functions) =
   let get_edge_by_src_and_dst_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; void_ptr_t; void_ptr_t |] in
   let get_edge_by_src_and_dst_str_func : L.llvalue = L.declare_function "get_edge_by_src_and_dst_str" get_edge_by_src_and_dst_str_t the_module in
 
+  let neighbors_one_arg_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let neighbors_one_arg_func : L.llvalue = L.declare_function "neighbors_one_arg" neighbors_one_arg_t the_module in
+
   let neighbors_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i32_t; i1_t |] in
   let neighbors_func : L.llvalue = L.declare_function "neighbors" neighbors_t the_module in
 
@@ -469,6 +472,14 @@ let translate (globals, functions) =
           | _ -> raise A.Unsupported_constructor)
     | "neighbors" ->
          (match e, args with
+          | (A.Graph(_), _), ((nlt, _) as nl) :: [] ->
+             let g_ptr = expr vars builder e in
+             let nl' = expr vars builder nl in 
+             let n_ptr = (match nlt with
+                         | A.Int | A.Bool -> L.build_call get_node_by_label_int_func [| g_ptr; nl' |] "get_node_by_label_int" builder
+                         | A.String -> L.build_call get_node_by_label_str_func [| g_ptr; nl' |] "get_node_by_label_str" builder
+                         | _ -> raise A.Unsupported_constructor) in
+             L.build_call neighbors_one_arg_func [| n_ptr |] "neihghbors_one_arg" builder
           | (A.Graph(_), _), ((nlt, _) as nl) :: level :: include_current :: [] ->
              let g_ptr = expr vars builder e in
              let nl' = expr vars builder nl in
