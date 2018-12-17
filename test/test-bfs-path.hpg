@@ -1,0 +1,5 @@
+int main() {
+	graph<int> g = [1 -()- 2 -()- 3; 1 -()- 4];
+	graph<int> g_sub1 = g.bfs(1);
+	g_sub1.print();
+}
