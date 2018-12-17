@@ -91,6 +91,10 @@ let check (globals, funcs) =
              { typ = Void; fname = s; args = []; body = [] }
           | "has_node" ->
              { typ = Int; fname = s; args = [(lt, "src")]; body = [] }
+          | "are_neighbors" ->
+             { typ = Bool; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
+          | "is_empty" ->
+             { typ = Bool; fname = s; args = []; body = [] }
           | "neighbors" ->
              if List.length margs = 1 then
              { typ = Graph(lt, dt, wt); fname = s; args = [(lt, "label")]; body = [] }
@@ -208,9 +212,7 @@ let check (globals, funcs) =
          (t, SAsn(var, (t, SGraphExpr(nl', el'))))
       | Fun, Fun, SFunsig(ty, bl, (_, fn_body)) ->
           let (_, new_expr) = expr fdecls vars e in
-(*             (if StringMap.mem "f" fdecls(* '  *)then print_string("Here") else print_string("not here"));
- *)          (check_asn lvt rvt err, SAsn(var, (rvt, new_expr)))
-          (*If we are storing an anonymous function in a variable, we need to add that*)
+              (check_asn lvt rvt err, SAsn(var, (rvt, new_expr)))
      
       | _ ->
          (check_asn lvt rvt err, SAsn(var, (rvt, e')))
