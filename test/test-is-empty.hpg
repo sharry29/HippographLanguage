@@ -1,0 +1,6 @@
+int main() {
+	graph<int:int, int> g1 = [];
+	print_bool(g1.is_empty());
+	graph<int:int, int> g2 = [1];
+	print_bool(g2.is_empty());
+}
