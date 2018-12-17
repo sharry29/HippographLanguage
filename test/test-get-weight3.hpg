@@ -1,0 +1,6 @@
+int main() {
+	graph<int:string, bool> g = [1:"foo" -(true)> 2:"bar" -()> 3];
+	print_bool(g.get_weight(1; 2));
+	print_bool(g.get_weight(2; 1));
+	print_bool(g.get_weight(2; 3));
+}

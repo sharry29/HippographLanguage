@@ -9,8 +9,12 @@
         * [DONE] set_edge (irina)
         * [DONE] remove_node (ben, irina)
         * [DONE] has_node (ben, irina)
-        * are_neighbors (ben, harry)
-        * is_empty (ben, harry)
+        * [DONE] are_neighbors (ben, harry)
+        * [DONE] is_empty (ben, harry)
+        * [DONE] get_node
+        * [DONE] get_weight
+        * [DONE] has_weight
+        * neighbors with one argument
         * [DONE] print (ben, yasu)
         * [DONE] neighbors (yasu)
         * [DONE] find (yasu)

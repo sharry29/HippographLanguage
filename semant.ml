@@ -89,6 +89,8 @@ let check (globals, funcs) =
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
           | "get_node" ->
               { typ = Node(lt, dt); fname = s; args = [(lt, "l")]; body = [] }
+          | "get_weight" ->
+              { typ = wt; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }
           | "print" ->
              { typ = Void; fname = s; args = []; body = [] }
           | "has_node" ->

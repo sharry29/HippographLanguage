@@ -281,7 +281,7 @@ int get_edge_w_int(edge *e) {
 }
 
 char *get_edge_w_str(edge *e) {
-  if (e == NULL || e -> has_val == 0) return 0;
+  if (e == NULL || e -> has_val == 0) return "";
   return e -> w -> s;
 }
 

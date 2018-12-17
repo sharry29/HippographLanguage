@@ -458,6 +458,23 @@ let translate (globals, functions) =
              | A.String -> L.build_call get_node_by_label_str_opt_func [| g_ptr; label' |] "get_node_by_label" builder
              | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
+    | "get_weight" ->
+         (match e, args with
+          | (A.Graph(lt, _, wt), _), src :: dst :: [] ->
+             let g_ptr = expr funcs vars builder e in
+             let src' = expr funcs vars builder src in
+             let dst' = expr funcs vars builder dst in
+             let e_ptr = (match lt with
+               | A.Int -> L.build_call get_edge_by_src_and_dst_int_func [| g_ptr; src'; dst' |] "get_edge_by_src_and_dst_int" builder
+               | A.Bool -> L.build_call get_edge_by_src_and_dst_bool_func [| g_ptr; src'; dst' |] "get_edge_by_src_and_dst_bool" builder
+               | A.String -> L.build_call get_edge_by_src_and_dst_str_func [| g_ptr; src'; dst' |] "get_edge_by_src_and_dst_str" builder
+               | _ -> raise A.Unsupported_constructor) in
+             (match wt with
+               | A.Int -> L.build_call get_edge_w_int_func [| e_ptr |] "get_edge_w" builder
+               | A.Bool -> L.build_call get_edge_w_bool_func [| e_ptr |] "get_edge_w" builder
+               | A.String -> L.build_call get_edge_w_str_func [| e_ptr |] "get_edge_w" builder
+               | _ -> raise A.Unsupported_constructor)
+          | _ -> raise A.Unsupported_constructor)
     | "get_name" ->
          let n_ptr = expr funcs vars builder e in
          let ret = L.build_call get_node_label_func [| n_ptr |] "tmp_data" builder in
