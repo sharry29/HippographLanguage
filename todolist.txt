@@ -23,6 +23,7 @@
         * [DONE] set_data
         * [DONE] get_name (yasu)
         * [DONE] print (yasu)
+- [DONE] remove break and continue
 - tests for the method calls (yasu)
 - clean up LRM style (ben)
 - dfs, bfs -> search strategy?

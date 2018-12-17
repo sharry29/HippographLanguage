@@ -34,8 +34,6 @@ type sstmt =
 	| SBlock of sstmt list
 	| SVdecl of typ * string * sexpr
 	| SReturn of sexpr
-	| SBreak
-	| SContinue
 
 type sfdecl = {
 	styp: typ;

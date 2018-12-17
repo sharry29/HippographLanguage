@@ -61,8 +61,6 @@ type stmt =
   | Block of stmt list
   | Vdecl of typ * string * expr
   | Return of expr
-  | Break
-  | Continue
 
 type fdecl = {typ: typ; fname:string; args:binding list; body:stmt list}
 

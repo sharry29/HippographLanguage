@@ -57,8 +57,6 @@ rule token = parse
 | "in"     { IN }
 | "NULL"   { NULL }
 | "return" { RETURN }
-| "break" { BREAK }
-| "continue" { CONTINUE }
 | ['0'-'9']+ as int_lit                 { INTLIT(int_of_string int_lit) }
 | '\'' ([^'\''] as char_lit) '\''       { CHARLIT(char_lit) }
 | ['0'-'9']*'.'['0'-'9']+ as float_lit  { FLOATLIT(float_lit)}

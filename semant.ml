@@ -396,10 +396,6 @@ let check (globals, funcs) =
           let (_, _, b1') = check_stmt fdecls vars b1 in
           let (_, _, b2') = check_stmt fdecls vars b2 in
           (fdecls, vars, SIf (check_bool_expr fdecls vars p, b1', b2'))
-      (* TODO: Start *)
-      | Break -> (fdecls, vars, SBreak)
-      | Continue -> (fdecls, vars, SContinue)
-      (* TODO: End *)
       | Vdecl (ty, s, e) ->
         if ty = Void
         then raise (Failure ("variable '" ^ s ^ "' declared void"))

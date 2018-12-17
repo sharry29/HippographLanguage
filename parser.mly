@@ -15,7 +15,7 @@
 %token EQ NEQ LEQ GEQ AND OR NOT
 %token INTTYPE BOOLTYPE CHARTYPE FLOATTYPE STRINGTYPE FUNTYPE GRAPHTYPE NODETYPE VOIDTYPE
 %token LUEDGE RUEDGE LDEDGE RDEDGE
-%token IF ELSE NOELSE WHILE FOR FORNODE FOREDGE IN NULL RETURN BREAK CONTINUE
+%token IF ELSE NOELSE WHILE FOR FORNODE FOREDGE IN NULL RETURN
 %token <int> INTLIT
 %token <string> FLOATLIT
 %token <char> CHARLIT
@@ -106,8 +106,6 @@ stmt:
 | typ VARIABLE ASSIGN expr SEQUENCE                        { Vdecl($1, $2, Asn($2, $4)) }
 | RETURN SEQUENCE                                          { Return Null }
 | RETURN expr SEQUENCE                                     { Return $2 }
-| BREAK SEQUENCE                                           { Break }
-| CONTINUE SEQUENCE                                        { Continue }
 
 expr:
   INTLIT                { Intlit($1) }
