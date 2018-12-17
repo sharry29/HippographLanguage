@@ -117,10 +117,10 @@ let translate (globals, functions) =
   let graph_set_edge_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i32_t; i32_t |] in
   let graph_set_edge_int_func : L.llvalue = L.declare_function "graph_set_edge_int" graph_set_edge_int_t the_module in
 
-   let graph_set_edge_str_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t |] in
+  let graph_set_edge_str_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t |] in
   let graph_set_edge_str_func : L.llvalue = L.declare_function "graph_set_edge_str" graph_set_edge_str_t the_module in
 
-   let graph_set_edge_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t; i1_t |] in
+  let graph_set_edge_bool_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; i1_t; i1_t |] in
   let graph_set_edge_bool_func : L.llvalue = L.declare_function "graph_set_edge_int" graph_set_edge_bool_t the_module in
 
   let graph_set_edge_str_int_t : L.lltype = L.var_arg_function_type i32_t [| void_ptr_t; str_t; str_t; i32_t |] in
@@ -209,6 +209,18 @@ let translate (globals, functions) =
 
   let find_data_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; str_t |] in
   let find_data_str_func : L.llvalue = L.declare_function "find_data_str" find_data_str_t the_module in
+
+  let are_neighbors_int_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t; i32_t; i32_t |] in
+  let are_neighbors_int_func : L.llvalue = L.declare_function "are_neighbors_int" are_neighbors_int_t the_module in
+
+  let are_neighbors_bool_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t; i1_t; i1_t |] in
+  let are_neighbors_bool_func : L.llvalue = L.declare_function "are_neighbors_int" are_neighbors_bool_t the_module in
+
+  let are_neighbors_str_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t; str_t; str_t |] in
+  let are_neighbors_str_func : L.llvalue = L.declare_function "are_neighbors_str" are_neighbors_str_t the_module in
+
+  let is_empty_t : L.lltype = L.var_arg_function_type i1_t [| void_ptr_t |] in
+  let is_empty_func : L.llvalue = L.declare_function "is_empty" is_empty_t the_module in
 
   let function_decls : (L.llvalue * sfdecl) StringMap.t =
     let function_decl m (sfdecl : sfdecl) =
@@ -457,6 +469,27 @@ let translate (globals, functions) =
                  then L.build_call set_node_data_str_func [| n_ptr; L.const_null str_t; L.const_int i1_t 0 |] "" builder
                  else L.build_call set_node_data_str_func [| n_ptr; d_ptr; L.const_int i1_t 1 |] "" builder
               | _ -> raise A.Unsupported_constructor)
+          | _ -> raise A.Unsupported_constructor)
+    | "are_neighbors" ->
+         (match e, args with
+          | (A.Graph(lt, _, _), _), src :: dst :: [] ->
+             let g_ptr = expr vars builder e in
+             let src' = expr vars builder src in
+             let dst' = expr vars builder dst in
+             (match lt with
+              | A.Int ->
+                L.build_call are_neighbors_int_func [| g_ptr; src'; dst' |] "are_neighbors" builder
+              | A.Bool ->
+                L.build_call are_neighbors_bool_func [| g_ptr; src'; dst' |] "are_neighbors" builder
+              | A.String ->
+                L.build_call are_neighbors_str_func [| g_ptr; src'; dst' |] "are_neighbors" builder
+              | _ -> raise A.Unsupported_constructor)
+          | _ -> raise A.Unsupported_constructor)
+    | "is_empty" ->
+         (match e with
+          | (A.Graph(_), _) ->
+             let g_ptr = expr vars builder e in
+             L.build_call is_empty_func [| g_ptr |] "is_empty" builder
           | _ -> raise A.Unsupported_constructor)
     | "print" ->
          (match e with

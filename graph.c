@@ -780,32 +780,36 @@ int graph_has_node_str(graph *g, char *name) {
 }
 
 int are_neighbors_int(graph *g, int from_name, int to_name) {
-  edge *e = g -> edge_list -> hd;
-  while (e != NULL) {
-    if ((*(int *) get_node_label(e -> src) == from_name) && (*(int *) get_node_label(e -> dst) == to_name) ) {
-      return 1;
-    }
-    e = e -> next;
+  node *src = get_node_by_label_int(g, from_name);
+  if (src == NULL || src -> neighbor_list -> hd == NULL) return 0;
+
+  neighbor_list_item *nli = src -> neighbor_list -> hd;
+  while (nli != NULL) {
+    node *dst = nli -> edge -> dst;
+    if (*(dst -> label -> i) == to_name) return 1;
+    nli = nli -> next;
   }
   return 0;
 }
 
 int are_neighbors_str(graph *g, char *from_name, char *to_name) {
-  edge *e = g -> edge_list -> hd;
-  while (e != NULL) {
-    if (((char *) get_node_label(e -> src) == from_name) && ((char *) get_node_label(e -> dst) == to_name) ) {
-      return 1;
-    }
-    e = e -> next;
+  node *src = get_node_by_label_str(g, from_name);
+  if (src == NULL || src -> neighbor_list -> hd == NULL) return 0;
+
+  neighbor_list_item *nli = src -> neighbor_list -> hd;
+  while (nli != NULL) {
+    node *dst = nli -> edge -> dst;
+    if (strcmp(dst -> label -> s, to_name) == 0) return 1;
+    nli = nli -> next;
   }
   return 0;
 }
 
 int is_empty(graph *g) {
   if (g -> node_list -> hd) {
-    return 0;
+    return 1; // true
   }
-  return 1;
+  return 0; // false
 }
 
 /* GRAPH TRAVERSAL */
