@@ -52,6 +52,9 @@ let translate (globals, functions) =
   let create_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
   let create_node_func : L.llvalue = L.declare_function "create_node" create_node_t the_module in
 
+  let clone_node_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t |] in
+  let clone_node_func : L.llvalue = L.declare_function "clone_node" clone_node_t the_module in
+
   let create_edge_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
   let create_edge_func : L.llvalue = L.declare_function "create_edge" create_edge_t the_module in
 
@@ -432,7 +435,8 @@ let translate (globals, functions) =
           | ((A.Node(_), _) as n) :: [] ->
             let g_ptr = expr funcs vars builder e in
             let n_ptr = expr funcs vars builder n in
-            L.build_call graph_set_node_func [| g_ptr; n_ptr |] "tmp_data" builder        
+            let n_ptr' = L.build_call clone_node_func [| n_ptr |] "clone_node" builder in
+            L.build_call graph_set_node_func [| g_ptr; n_ptr' |] "tmp_data" builder        
           | _ -> raise A.Unsupported_constructor)
     | "remove_node" ->
          (match args with

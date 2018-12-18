@@ -702,9 +702,11 @@ int graph_set_edge_str_str(graph *g, char *src_label, char *dst_label, char *w) 
 }
 
 int graph_set_edge_str_int(graph *g, char *src_label, char *dst_label, int w) {
-  edge *e = get_edge_by_src_and_dst_str_int(g, src_label, dst_label);
-  if (e != NULL)
-    remove_edge(g, e);
+  edge *e = get_edge_by_src_and_dst_str(g, src_label, dst_label);
+  if (e != NULL) {
+    set_edge_w_int(e, w, 1);
+    return 0;
+  }
 
   edge *new_e = create_edge();
   set_edge_w_int(new_e, w, 1);
