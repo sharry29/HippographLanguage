@@ -22,7 +22,7 @@ let translate (globals, functions) =
     | A.Int     -> i32_t
     | A.Bool  	-> i1_t
     | A.String 	-> str_t
-    | A.Fun -> void_ptr_t
+    | A.Fun -> raise A.Unsupported_constructor
     | A.Node(_, _) -> void_ptr_t
     | A.Edge(_) -> void_ptr_t
     | A.Graph(_,_,_) -> void_ptr_t
@@ -272,17 +272,25 @@ let translate (globals, functions) =
     (* Construct the function's "locals": formal arguments and locally
        declared variables.  Allocate each on the stack, initialize their
        value, if appropriate, and remember their values in the "locals" map *)
-    let add_arg m (t, n) p = L.set_value_name n p;
+    let add_arg builder m (t, n) p = L.set_value_name n p;
       let local = L.build_alloca (ltype_of_typ t) n builder in
       ignore (L.build_store p local builder);
       StringMap.add n local m in
+
+    let add_local_fn builder m n sfdecl = 
+      let formal_types = 
+        Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) sfdecl.sargs)
+      in let ftype = 
+        L.pointer_type (L.function_type (ltype_of_typ sfdecl.styp) formal_types) in
+      let local_var = L.build_alloca ftype n builder
+      in StringMap.add n local_var m in
 
     let add_local builder m (t, n) =
       let local_var = L.build_alloca (ltype_of_typ t) n builder
       in StringMap.add n local_var m in
 
     let local_vars =
-      List.fold_left2 add_arg StringMap.empty sfdecl.sargs
+      List.fold_left2 (add_arg builder) StringMap.empty sfdecl.sargs
           (Array.to_list (L.params the_function)) in
 
     let local_funcs = StringMap.empty in
@@ -333,7 +341,7 @@ let translate (globals, functions) =
       | SFunsig (t, bl, e) -> 
         let t_list = List.map fst bl in 
         let new_fun_t = L.function_type (ltype_of_typ t) (Array.of_list (List.map ltype_of_typ t_list)) in
-        L.declare_function "temp" new_fun_t the_module 
+        L.define_function "temp" new_fun_t the_module 
       | SFCall ("print", [e]) ->
          L.build_call print_func [| str_format_str ; ( expr funcs vars builder e ) |] "" builder
       | SFCall ("print_int", [e]) | SFCall ("print_bool", [e]) ->
@@ -355,7 +363,9 @@ let translate (globals, functions) =
          | _ -> v
          in
          let e' = expr funcs vars builder (t, v) in
-         ignore (L.build_store e' (lookup vars s) builder); e'
+         (match t with
+         | A.Fun -> ignore (L.build_store e' (lookup vars s) builder); e'
+         | _ -> ignore (L.build_store e' (lookup vars s) builder); e')
       | SGraphExpr(nlist, elist) ->
          let g = L.build_call create_graph_func [||] "create_graph" builder in
          ignore (List.map (fun n -> L.build_call add_node_func [| g; expr funcs vars builder n |] "add_node" builder) nlist);
@@ -645,20 +655,27 @@ let translate (globals, functions) =
         let _ = expr funcs vars builder e in (funcs, vars, builder)
       (* fun f = ... (...) (...) *)
       | SVdecl (ty, s, e) ->
-        let vars' = add_local builder vars (ty, s) in
         (match e with
         | (Fun, SAsn(var_name, (Fun, SFunsig(t, bl, e')))) ->
           (* Make the function's signature*)
-          let sfdecl = {styp = t; sfname = var_name; sargs = bl; sbody = [SExpr(e')]} in
+          let sfdecl = {styp = t; sfname = var_name; sargs = bl; sbody = [SReturn(e')]} in
           (* Get the function's llvalue*)
+          let vars' = add_local_fn builder vars s sfdecl in
           let ll_fun_val = expr funcs vars' builder e in
+          let ll_fun_type = L.type_of ll_fun_val in
           let funcs' = StringMap.add var_name (ll_fun_val, sfdecl) funcs in
           let builder' = L.builder_at_end context (L.entry_block ll_fun_val) in
-          let new_locals = 
-            List.fold_left2 add_arg StringMap.empty sfdecl.sargs (Array.to_list (L.params the_function)) in 
+          let new_locals = List.fold_left2 (add_arg builder') StringMap.empty sfdecl.sargs (Array.to_list (L.params ll_fun_val)) in 
+          let (_, _, builder'') = stmt (funcs', new_locals, builder') (SBlock sfdecl.sbody) in
+
+          (add_terminal builder'' (match sfdecl.styp with
+                            A.Void -> L.build_ret_void
+                          | t -> L.build_ret (L.const_int (ltype_of_typ t) 0)));
 
           (funcs', vars', builder)
-        | _ -> let _ = expr funcs vars' builder e in (funcs, vars', builder))
+        | _ -> 
+          let vars' = add_local builder vars (ty, s) in
+          let _ = expr funcs vars' builder e in (funcs, vars', builder))
         
       | SReturn e ->
         let _ = match sfdecl.styp with

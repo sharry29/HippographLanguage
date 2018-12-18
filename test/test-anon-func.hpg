@@ -1,5 +1,6 @@
 int main() {
 	fun f = int (int x; int y) (x + y);
+	fun g = int (bool q) (0);
 	print_int( f(3; 4) );
 	return 0;
 }
