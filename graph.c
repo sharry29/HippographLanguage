@@ -890,6 +890,9 @@ void add_neighbors_of_node_to_graph(graph *g_new, node *n_root, node *n_orig, in
     }
 
     edge *e = create_edge();
+    e -> w = clone_primitive(nli -> edge -> w);
+    e -> w_typ = nli -> edge -> w_typ;
+    e -> has_val = nli -> edge -> has_val;
     if (n_orig == neighbor && neighbor_copy != NULL) {
       // If edge is self-directed, add edge to graph but nothing else
       if (neighbor -> label_typ == INTTYPE || neighbor -> label_typ == BOOLTYPE) {
