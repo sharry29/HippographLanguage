@@ -26,6 +26,13 @@ int main() {
       for_edge(src, dst, w : interim) {
           int src_data = src.get_data();
           int dst_data = dst.get_data();
+          print("info");
+          src.print();
+          dst.print();
+
+          print("");
+          print_int(w);
+          print_int(src_data + w);
           if (src_data + w < dst_data) {
             int new_dst_data = src_data + w;
             node<string:int> new_dst = dst.get_name():new_dst_data;
@@ -41,12 +48,15 @@ int main() {
       }
     }
 
-    for_edge(src, dst, w : g) {
+    for_edge(src, dst, w : shortest_path) {
         int src_data = src.get_data();
         int dst_data = dst.get_data();
         if (src_data + w < dst_data) {
             print("negative edge weight cycle");
             valid = false;
+        }
+        else if (src_data + w > dst_data) {
+            shortest_path.remove_edge(src.get_name(); dst.get_name());
         }
     }
 
