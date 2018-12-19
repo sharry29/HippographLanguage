@@ -448,59 +448,6 @@ edge *get_edge_by_src_and_dst_str(graph *g, char *src_label, char *dst_label) {
   return NULL;
 }
 
-edge *get_edge_by_src_and_dst_int_int(graph *g, int src_label, int dst_label) {
-  edge *curr = g -> edge_list -> hd;
-  while (curr != NULL) {
-    if ((curr -> w_typ == INTTYPE || curr -> w_typ == BOOLTYPE) &&
-        *(get_edge_src(curr) -> label -> i) == src_label &&
-        *(get_edge_dst(curr) -> label -> i) == dst_label) {
-      return curr;
-    }
-    curr = curr -> next;
-  }
-  return NULL;
-
-}
-
-edge *get_edge_by_src_and_dst_int_str(graph *g, int src_label, int dst_label) {
-  edge *curr = g -> edge_list -> hd;
-  while (curr != NULL) {
-    if (curr -> w_typ == STRTYPE &&
-        *(get_edge_src(curr) -> label -> i) == src_label &&
-        *(get_edge_dst(curr) -> label -> i) == dst_label) {
-      return curr;
-    }
-    curr = curr -> next;
-  }
-  return NULL;
-}
-
-edge *get_edge_by_src_and_dst_str_str(graph *g, char *src_label, char *dst_label) {
-  edge *curr = g -> edge_list -> hd;
-  while (curr != NULL) {
-    if (curr -> w_typ == STRTYPE &&
-        strcmp((char *) (get_edge_src(curr) -> label -> s), src_label) == 0 &&
-        strcmp((char *) (get_edge_dst(curr) -> label -> s), dst_label) == 0) {
-      return curr;
-    }
-    curr = curr -> next;
-  }
-  return NULL;
-}
-
-edge *get_edge_by_src_and_dst_str_int(graph *g, char *src_label, char *dst_label) {
-  edge *curr = g -> edge_list -> hd;
-  while (curr != NULL) {
-    if ((curr -> w_typ == INTTYPE || curr -> w_typ == BOOLTYPE) &&
-        strcmp((char *) (get_edge_src(curr) -> label -> s), src_label) == 0 &&
-        strcmp((char *) (get_edge_dst(curr) -> label -> s), dst_label) == 0) {
-      return curr;
-    }
-    curr = curr -> next;
-  }
-  return NULL;
-}
-
 int add_neighbor(node *n, edge *e) {
   if (n != e -> src) return -1;
 
@@ -655,8 +602,10 @@ int remove_edge(graph *g, edge *e) {
 
 int graph_set_edge_int(graph *g, int src_label, int dst_label) {
   edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
-  if (e != NULL)
-    remove_edge(g, e);
+  if (e != NULL) {
+    set_edge_w_int(e, 0, 0);
+    return 0;
+  }
 
   edge *new_e = create_edge();
   set_edge_w_int(new_e, 0, 0);
@@ -667,8 +616,10 @@ int graph_set_edge_int(graph *g, int src_label, int dst_label) {
 
 int graph_set_edge_str(graph *g, char *src_label, char *dst_label) {
   edge *e = get_edge_by_src_and_dst_str(g, src_label, dst_label);
-  if (e != NULL)
-    remove_edge(g, e);
+  if (e != NULL) {
+    set_edge_w_str(e, "", 0);
+    return 0;
+  }
 
   edge *new_e = create_edge();
   set_edge_w_str(new_e, "", 0);
@@ -678,9 +629,11 @@ int graph_set_edge_str(graph *g, char *src_label, char *dst_label) {
 }
 
 int graph_set_edge_int_int(graph *g, int src_label, int dst_label, int w) {
-  edge *e = get_edge_by_src_and_dst_int_int(g, src_label, dst_label);
-  if (e != NULL)
-    remove_edge(g, e);
+  edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
+  if (e != NULL) {
+    set_edge_w_int(e, w, 1);
+    return 0;
+  }
 
   edge *new_e = create_edge();
   set_edge_w_int(new_e, w, 1);
@@ -690,9 +643,11 @@ int graph_set_edge_int_int(graph *g, int src_label, int dst_label, int w) {
 }
 
 int graph_set_edge_str_str(graph *g, char *src_label, char *dst_label, char *w) {
-  edge *e = get_edge_by_src_and_dst_str_str(g, src_label, dst_label);
-  if (e != NULL)
-    remove_edge(g, e);
+  edge *e = get_edge_by_src_and_dst_str(g, src_label, dst_label);
+  if (e != NULL) {
+    set_edge_w_str(e, w, 1);
+    return 0;
+  }
 
   edge *new_e = create_edge();
   set_edge_w_str(new_e, w, 1);
@@ -716,9 +671,11 @@ int graph_set_edge_str_int(graph *g, char *src_label, char *dst_label, int w) {
 }
 
 int graph_set_edge_int_str(graph *g, int src_label, int dst_label, char *w) {
-  edge *e = get_edge_by_src_and_dst_int_str(g, src_label, dst_label);
-  if (e != NULL)
-    remove_edge(g, e);
+  edge *e = get_edge_by_src_and_dst_int(g, src_label, dst_label);
+  if (e != NULL) {
+    set_edge_w_str(e, w, 1);
+    return 0;
+  }
 
   edge *new_e = create_edge();
   set_edge_w_str(new_e, w, 1);
