@@ -1,0 +1,13 @@
+int main() {
+	graph<string:string, string> family = ["Joe":"Grandfather" <("Spouses")> "Mary":"Grandmother"; "Joe" <("Brothers")> "Charlie":"Great Uncle"; "Joe" -("Son")> "Mufasa":"Father"; "Mary" -("Son")> "Mufasa" <("Spouses")> "Sirabi":"Mother" -("Son")> "Simba":"The Prince" <("Son")- "Mufasa"];
+
+	family.print();
+
+	print("");
+	print("Simba got married!");
+	node<string:string> nala = "Nala":"Daughter in law";
+	family.set_node(nala);
+	family.set_edge("Simba"; "Nala"; "Spouses");
+	family.set_edge("Nala"; "Simba"; "Spouses");
+	family.print();
+}
