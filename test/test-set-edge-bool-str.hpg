@@ -1,5 +1,6 @@
 int main() {
 	graph<bool:int, string> g = [true:1 <("bla")> false:9];
 	g.set_edge(false; true; "bla");
+  print(g.get_weight(false; true));
 	return 0;
 }

@@ -1,0 +1,5 @@
+int main() {
+	graph<string:bool, string> g = ["1":true; "2": false];
+	g.set_edge("1"; "2"); (* set weight to empty *)
+  g.print();
+}

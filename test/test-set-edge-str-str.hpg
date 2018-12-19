@@ -1,5 +1,6 @@
 int main() {
 	graph<string:int, string> g = ["hello":1 <("yes")> "good":9];
 	g.set_edge("hello"; "good"; "now");
-	return 0;
+	print(g.get_weight("hello"; "good"));
+  return 0;
 }
