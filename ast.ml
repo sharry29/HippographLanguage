@@ -2,7 +2,7 @@ type typ =
     Int
   | Float
   | Char
-  | Fun
+  | Fun of typ * (typ list)
   | String
   | Bool
   | Void
@@ -105,7 +105,7 @@ let rec string_of_typ = function
   | Float  -> "float"
   | Void   -> "void"
   | Char   -> "char"
-  | Fun    -> "fun"
+  | Fun(ret_t, _)    -> "fun"
   | String -> "string"
   | Void   -> "void"
   | Node(nl, nd)  -> "node<" ^ string_of_typ nl ^ ", " ^ string_of_typ nd ^ ">"

@@ -22,7 +22,7 @@ let translate (globals, functions) =
     | A.Int     -> i32_t
     | A.Bool  	-> i1_t
     | A.String 	-> str_t
-    | A.Fun -> raise A.Unsupported_constructor
+    | A.Fun(_) -> raise A.Unsupported_constructor
     | A.Node(_, _) -> void_ptr_t
     | A.Edge(_) -> void_ptr_t
     | A.Graph(_,_,_) -> void_ptr_t
@@ -367,7 +367,7 @@ let translate (globals, functions) =
          in
          let e' = expr funcs vars builder (t, v) in
          (match t with
-         | A.Fun -> ignore (L.build_store e' (lookup vars s) builder); e'
+         | A.Fun(_) -> ignore (L.build_store e' (lookup vars s) builder); e'
          | _ -> ignore (L.build_store e' (lookup vars s) builder); e')
       | SGraphExpr(nlist, elist) ->
          let g = L.build_call create_graph_func [||] "create_graph" builder in
@@ -660,7 +660,7 @@ let translate (globals, functions) =
       (* fun f = ... (...) (...) *)
       | SVdecl (ty, s, e) ->
         (match e with
-        | (Fun, SAsn(var_name, (Fun, SFunsig(t, bl, e')))) ->
+        | (Fun(_), SAsn(var_name, (Fun(_), SFunsig(t, bl, e')))) ->
           (* Make the function's signature*)
           let sfdecl = {styp = t; sfname = var_name; sargs = bl; sbody = [SReturn(e')]} in
           (* Get the function's llvalue*)
