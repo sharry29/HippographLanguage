@@ -1,5 +1,5 @@
 int main() {
-    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(2)> "B":500 -(1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(1)>"C"; "D" -(4)> "A"];
+    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(2)> "B":500 -(-1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(1)>"C"; "D" -(4)> "A"];
 
     graph<string:int, int> interim = [];
     graph<string:int, int> shortest_path = [];
@@ -26,23 +26,13 @@ int main() {
       for_edge(src, dst, w : interim) {
           int src_data = src.get_data();
           int dst_data = dst.get_data();
-          print("info");
-          src.print();
-          dst.print();
 
-          print("");
-          print_int(w);
-          print_int(src_data + w);
           if (src_data + w < dst_data) {
             int new_dst_data = src_data + w;
             node<string:int> new_dst = dst.get_name():new_dst_data;
             interim.set_node(new_dst);
             shortest_path.set_node(new_dst);
-            graph<string:int, int> clean = interim.neighbors(src.get_name());
-            for_node(m : clean) {
-                interim.remove_edge(m.get_name(); dst.get_name());
-                shortest_path.remove_edge(m.get_name(); dst.get_name());
-            }
+
             shortest_path.set_edge(src.get_name(); dst.get_name(); w);
           }
       }
