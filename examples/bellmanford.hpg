@@ -36,7 +36,6 @@ int main() {
             int new_dst_data = src_data + w;
             node<string:int> new_dst = dst.get_name():new_dst_data;
             shortest_path.set_node(new_dst);
-            shortest_path.set_edge(src.get_name(); dst.get_name(); w);
           }
       }
     }
