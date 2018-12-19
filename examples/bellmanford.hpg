@@ -1,46 +1,51 @@
 int main() {
-    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(2)> "B":500 -(-1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(1)>"C"; "D" -(4)> "A"];
+    
+    bool valid = true; (*negative edge cycle check*)
+    
+    (*Initial graph*)
+    graph<string:int, int> g = ["S":500 -(10)> "A":500 -(2)> "C":500 -(2)> "B":500 -(1)> "A"; "S" -(8)>"E":500 -(1)> "D":500 -(1)>"C"; "D" -(4)> "A"];
 
-    graph<string:int, int> interim = [];
+    (*Shortest path graph*)
     graph<string:int, int> shortest_path = [];
-    bool valid = true;
-
+    
+    (*Initialize distances to infinity*)
     for_node(n : g) {
         node<string:int> n1 = n.get_name():999999;
-        interim.set_node(n1);
         shortest_path.set_node(n1);
     }
 
+    (*copy in weights*)
     for_edge(src, dst, w: g) {
-        interim.set_edge(src.get_name(); dst.get_name(); w);
+        shortest_path.set_edge(src.get_name(); dst.get_name(); w);
     }
+
+    (*Initialize start node to 0*)
+    node<string:int> source_n = "S":0;
+    shortest_path.set_node(source_n);
 
     print("ORIGINAL GRAPH:");
     g.print();
 
-    node<string:int> source_n = "S":0;
-    interim.set_node(source_n);
-    shortest_path.set_node(source_n);
-
-    for_node(n : interim) {
-      for_edge(src, dst, w : interim) {
+    (*Relax edges n times*)
+    for_node(n : shortest_path) {
+      for_edge(src, dst, w : shortest_path) {
           int src_data = src.get_data();
           int dst_data = dst.get_data();
 
           if (src_data + w < dst_data) {
             int new_dst_data = src_data + w;
             node<string:int> new_dst = dst.get_name():new_dst_data;
-            interim.set_node(new_dst);
             shortest_path.set_node(new_dst);
-
             shortest_path.set_edge(src.get_name(); dst.get_name(); w);
           }
       }
     }
 
+    (*Negative edge weight cycle check*)
     for_edge(src, dst, w : shortest_path) {
         int src_data = src.get_data();
         int dst_data = dst.get_data();
+
         if (src_data + w < dst_data) {
             print("negative edge weight cycle");
             valid = false;
