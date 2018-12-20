@@ -137,6 +137,16 @@ let check (globals, funcs) =
 	                                  StringMap.empty (func.args)
     in
 
+    let funcs' = List.map (fun (ty, name) -> 
+                            match ty with
+                            | Fun(ret_t, args_t) ->
+                               {typ = ret_t; fname = name; args = List.map (fun t -> (t, "x")) args_t; body = []}
+                            | _ -> raise Unsupported_constructor)
+                         (List.filter (fun (ty, name) -> match ty with Fun(_) -> true | _ -> false) func.args) in
+
+
+    let local_fdecls = List.fold_left add_func StringMap.empty funcs' in
+
     (* Return a variable from our local symbol table *)
     let type_of_variable vars s =
       try StringMap.find s vars
@@ -439,7 +449,7 @@ let check (globals, funcs) =
     { styp = func.typ;
       sfname = func.fname;
       sargs = func.args;
-      sbody = let (_, _, st) = check_stmt StringMap.empty local_vars (Block func.body)
+      sbody = let (_, _, st) = check_stmt local_fdecls local_vars (Block func.body)
               in match st with
 	             SBlock(sl) -> sl
               | _ -> raise (Failure ("internal error: block didn't become a block?"))

@@ -1,8 +1,0 @@
-int main() {
-	fun f = int (int x; int y) (9);
-	fun g;
-	g = f;
-	fun q = int (fun f) (f(3;4));
-	int x = q(g);
-	return 0;
-}
