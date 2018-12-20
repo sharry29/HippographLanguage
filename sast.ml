@@ -1,3 +1,10 @@
+(* Authors:
+  Benjamin Lewinter bsl2121
+  Irina Mateescu    im2441
+  Harry Smith       hs3061
+  Yasunari Watanabe yw3239
+*)
+
 (*Semantically checked abstract syntax tree*)
 
 open Ast
