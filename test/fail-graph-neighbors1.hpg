@@ -1,0 +1,4 @@
+int main() {
+	graph<int, int> g = [];
+	graph<int, string> g_sub = g.neighbors(5; 2; true);
+}

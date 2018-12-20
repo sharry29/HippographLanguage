@@ -1,0 +1,4 @@
+int main() {
+	graph<int:string, string> g = [1:"foo" -("10")> 2:"bar" -()> 3];
+	print(g.get_weight("1"; "2"));
+}

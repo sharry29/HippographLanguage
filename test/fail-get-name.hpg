@@ -1,0 +1,4 @@
+int main() {
+  node<int> n = 1;
+  print(n.get_name());
+}

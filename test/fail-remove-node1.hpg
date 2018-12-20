@@ -1,0 +1,4 @@
+int main() {
+	graph<int, int> g = [1 <(10)> 2; 3];
+	int result1 = g.remove_node("1");
+}

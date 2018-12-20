@@ -1,0 +1,10 @@
+int main() {
+	int a = 1;
+	if (a == 2) {
+		int b = 4;
+		if (b == 4) {
+			int c;
+		}
+		print_int(c);
+	}
+}

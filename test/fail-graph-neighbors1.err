@@ -1,0 +1,1 @@
+Fatal error: exception Failure("illegal assignment graph<int, bool, string> = graph<int, bool, int> in g_sub = g.neighbors(5, 2, true)")

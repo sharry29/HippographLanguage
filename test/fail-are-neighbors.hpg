@@ -1,0 +1,4 @@
+int main() {
+	graph<int, int> g = [1 <(5)> 2 -()> 3];
+	print_bool(g.are_neighbors(1; "2"));
+}

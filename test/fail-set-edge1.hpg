@@ -1,0 +1,5 @@
+int main() {
+	graph<int:int, string> g = [1:1 <("foo")> 2:9];
+	g.set_edge(1; 2; 1);
+	return 0;
+}
