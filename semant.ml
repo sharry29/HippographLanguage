@@ -137,6 +137,16 @@ let check (globals, funcs) =
 	                                  StringMap.empty (func.args)
     in
 
+    let funcs' = List.map (fun (ty, name) -> 
+                            match ty with
+                            | Fun(ret_t, args_t) ->
+                               {typ = ret_t; fname = name; args = List.map (fun t -> (t, "x")) args_t; body = []}
+                            | _ -> raise Unsupported_constructor)
+                         (List.filter (fun (ty, name) -> match ty with Fun(_) -> true | _ -> false) func.args) in
+
+
+    let local_fdecls = List.fold_left add_func StringMap.empty funcs' in
+
     (* Return a variable from our local symbol table *)
     let type_of_variable vars s =
       try StringMap.find s vars
@@ -219,7 +229,7 @@ let check (globals, funcs) =
 
          let t = Graph(llt, ldt, lwt) in
          (t, SAsn(var, (t, SGraphExpr(nl', el'))))
-      | Fun, Fun, SFunsig(ty, bl, (_, fn_body)) ->
+      | Fun(_), Fun(_), SFunsig(ty, bl, (_, fn_body)) ->
           let (_, new_expr) = expr fdecls vars e in
               (check_asn lvt rvt err, SAsn(var, (rvt, new_expr)))
      
@@ -348,8 +358,9 @@ let check (globals, funcs) =
                                     vars (b_list) in 
       let (ty, sx) = expr fdecls vars' ex in
       let err = "type mismatch in result of anonymous function" in
-      let checked_type = check_asn typ ty err in 
-      (Fun, SFunsig(checked_type, b_list, (ty, sx)))
+      let checked_type = check_asn typ ty err in
+      let typ_list = List.map (fun (ty, name) -> ty) b_list in
+      (Fun(typ, typ_list), SFunsig(checked_type, b_list, (ty, sx)))
     in
 
     let check_bool_expr fdecls vars e = 
@@ -398,7 +409,7 @@ let check (globals, funcs) =
         then raise (Failure ("variable '" ^ s ^ "' declared void"))
         else let vars' = StringMap.add s ty vars in
           (match ty, e with
-          | Fun, Asn(_, Var(var_name)) -> 
+          | Fun(_), Asn(_, Var(var_name)) -> 
               (print_string "here\n");
               let new_fun = {(find_func fdecls var_name) with fname = s} in
               let fdecls' = add_func fdecls new_fun in 
@@ -435,7 +446,7 @@ let check (globals, funcs) =
     { styp = func.typ;
       sfname = func.fname;
       sargs = func.args;
-      sbody = let (_, _, st) = check_stmt StringMap.empty local_vars (Block func.body)
+      sbody = let (_, _, st) = check_stmt local_fdecls local_vars (Block func.body)
               in match st with
 	             SBlock(sl) -> sl
               | _ -> raise (Failure ("internal error: block didn't become a block?"))

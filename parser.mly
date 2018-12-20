@@ -77,13 +77,21 @@ typ:
 | INTTYPE    { Int }
 | BOOLTYPE   { Bool }
 | STRINGTYPE { String }
-| FUNTYPE    { Fun }
+| FUNTYPE LANGLE typ COLON typ_list_opt RANGLE     { Fun($3, $5) }
 | GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
 | GRAPHTYPE LANGLE typ COMMA typ RANGLE            { Graph($3, Bool, $5) }
 | GRAPHTYPE LANGLE typ COLON typ RANGLE            { Graph($3, $5, Bool) }
 | GRAPHTYPE LANGLE typ RANGLE                      { Graph($3, Bool, Bool) }
 | NODETYPE  LANGLE typ COLON typ RANGLE            { Node($3, $5) }
 | NODETYPE  LANGLE typ RANGLE                      { Node($3, Bool) }
+
+typ_list_opt:
+  { [] }
+| typ_list { List.rev $1 }
+
+typ_list:
+  typ                       { [$1] }
+| typ_list COMMA typ { $3 :: $1 }
 
 stmt_list:
   { [] }
