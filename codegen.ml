@@ -43,6 +43,9 @@ let translate (globals, functions) =
   let print_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let print_func : L.llvalue = L.declare_function "printf" print_t the_module in
 
+  let strcmp_t : L.lltype = L.var_arg_function_type i32_t [| str_t; str_t |] in
+  let strcmp_func : L.llvalue = L.declare_function "strcmp" strcmp_t the_module in
+
   let create_graph_t : L.lltype = L.var_arg_function_type void_ptr_t [| |] in
   let create_graph_func : L.llvalue = L.declare_function "create_graph" create_graph_t the_module in
 
@@ -324,23 +327,38 @@ let translate (globals, functions) =
           (match op with
             A.Neg     -> L.build_neg
           | A.Not     -> L.build_not) e' "tmp" builder
-      | SBinop (e1, op, e2) ->
-          let e1' = expr funcs vars builder e1
+      | SBinop ((e1_t, e1), op, e2) ->
+          let e1' = expr funcs vars builder (e1_t, e1)
           and e2' = expr funcs vars builder e2 in
-          (match op with
-            A.Add     -> L.build_add
-          | A.Sub     -> L.build_sub
-          | A.Mul     -> L.build_mul
-          | A.Div     -> L.build_sdiv
-          | A.And     -> L.build_and
-          | A.Or      -> L.build_or
-          | A.Eq      -> L.build_icmp L.Icmp.Eq
-          | A.Neq     -> L.build_icmp L.Icmp.Ne
-          | A.Lt      -> L.build_icmp L.Icmp.Slt
-          | A.Leq     -> L.build_icmp L.Icmp.Sle
-          | A.Gt      -> L.build_icmp L.Icmp.Sgt
-          | A.Geq     -> L.build_icmp L.Icmp.Sge
-          ) e1' e2' "tmp" builder
+          (match e1_t with
+          | A.String ->
+            let e1' = L.build_call strcmp_func [| e1'; e2' |] "strcmp" builder in
+            let e2' = L.const_int i32_t 0 in
+            (match op with
+            | A.Eq      -> L.build_icmp L.Icmp.Eq
+            | A.Neq     -> L.build_icmp L.Icmp.Ne
+            | A.Lt      -> L.build_icmp L.Icmp.Slt
+            | A.Leq     -> L.build_icmp L.Icmp.Sle
+            | A.Gt      -> L.build_icmp L.Icmp.Sgt
+            | A.Geq     -> L.build_icmp L.Icmp.Sge
+            | _         -> raise A.Unsupported_constructor)
+            e1' e2' "tmp" builder
+          | _ ->
+            (match op with
+              A.Add     -> L.build_add
+            | A.Sub     -> L.build_sub
+            | A.Mul     -> L.build_mul
+            | A.Div     -> L.build_sdiv
+            | A.And     -> L.build_and
+            | A.Or      -> L.build_or
+            | A.Eq      -> L.build_icmp L.Icmp.Eq
+            | A.Neq     -> L.build_icmp L.Icmp.Ne
+            | A.Lt      -> L.build_icmp L.Icmp.Slt
+            | A.Leq     -> L.build_icmp L.Icmp.Sle
+            | A.Gt      -> L.build_icmp L.Icmp.Sgt
+            | A.Geq     -> L.build_icmp L.Icmp.Sge
+            ) e1' e2' "tmp" builder)
+
       | SFunsig (t, bl, e) -> 
         let t_list = List.map fst bl in 
         let new_fun_t = L.function_type (ltype_of_typ t) (Array.of_list (List.map ltype_of_typ t_list)) in

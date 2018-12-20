@@ -1,0 +1,6 @@
+int main() {
+	print_bool("foo" == "foo");
+	print_bool("foo" == "bar");
+	print_bool("foo" > "bar");
+	print_bool("foo" < "bar");
+}

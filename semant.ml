@@ -245,7 +245,7 @@ let check (globals, funcs) =
       let ty = match op with
                | Add | Sub | Mul | Div when same && t1 = Int -> Int
                | Eq  | Neq when same -> Bool
-               | Lt | Leq | Gt | Geq when same && (t1 = Int) -> Bool
+               | Lt | Leq | Gt | Geq when same && (t1 = Int || t1 = String) -> Bool
                | And | Or when same && t1 = Bool -> Bool
                | _ -> 
                   raise (Failure ("illegal binary operator " ^
