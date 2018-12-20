@@ -84,7 +84,7 @@ let check (globals, funcs) =
         | Graph(lt, dt, wt) ->
           (match s with
           | "set_node" ->
-              { typ = Int; fname = s; args = [(Node(lt, wt), "x")]; body = [] }
+              { typ = Int; fname = s; args = [(Node(lt, dt), "x")]; body = [] }
           | "set_edge" ->
               if List.length margs = 2 then
               { typ = Int; fname = s; args = [(lt, "src"); (lt, "dst")]; body = [] }

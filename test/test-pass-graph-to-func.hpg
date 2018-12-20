@@ -1,0 +1,13 @@
+int main() {
+	graph<int, string> g = [1 -("a")- 2];
+	add_node_remotely(g; 3);
+	add_node_remotely(g; 4);
+	add_node_remotely(g; 5);
+	g.print();
+	return 0;
+}
+
+void add_node_remotely(graph<int, string> g; int label) {
+	node<int> n = label;
+	g.set_node(n);
+}
