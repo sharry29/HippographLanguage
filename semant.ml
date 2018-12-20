@@ -142,7 +142,7 @@ let check (globals, funcs) =
                             | Fun(ret_t, args_t) ->
                                {typ = ret_t; fname = name; args = List.map (fun t -> (t, "x")) args_t; body = []}
                             | _ -> raise Unsupported_constructor)
-                         (List.filter (fun (ty, name) -> match ty with Fun(_) -> true | _ -> false) func.args) in
+                         (List.filter (fun (ty, _) -> match ty with Fun(_) -> true | _ -> false) func.args) in
 
 
     let local_fdecls = List.fold_left add_func StringMap.empty funcs' in
@@ -229,7 +229,7 @@ let check (globals, funcs) =
 
          let t = Graph(llt, ldt, lwt) in
          (t, SAsn(var, (t, SGraphExpr(nl', el'))))
-      | Fun(_), Fun(_), SFunsig(ty, bl, (_, fn_body)) ->
+      | Fun(_), Fun(_), SFunsig(_) ->
           let (_, new_expr) = expr fdecls vars e in
               (check_asn lvt rvt err, SAsn(var, (rvt, new_expr)))
      
@@ -359,7 +359,7 @@ let check (globals, funcs) =
       let (ty, sx) = expr fdecls vars' ex in
       let err = "type mismatch in result of anonymous function" in
       let checked_type = check_asn typ ty err in
-      let typ_list = List.map (fun (ty, name) -> ty) b_list in
+      let typ_list = List.map (fun (ty, _) -> ty) b_list in
       (Fun(typ, typ_list), SFunsig(checked_type, b_list, (ty, sx)))
     in
 

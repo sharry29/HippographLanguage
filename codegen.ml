@@ -146,7 +146,6 @@ let translate (globals, functions) =
   let get_node_by_label_int_opt_func : L.llvalue = L.declare_function "get_node_by_label_int_opt" get_node_by_label_int_t the_module in
 
   let get_node_by_label_bool_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; i1_t |] in
-  let get_node_by_label_bool_func : L.llvalue = L.declare_function "get_node_by_label_int" get_node_by_label_bool_t the_module in
   let get_node_by_label_bool_opt_func : L.llvalue = L.declare_function "get_node_by_label_bool_opt" get_node_by_label_bool_t the_module in
 
   let get_node_by_label_str_t : L.lltype = L.var_arg_function_type void_ptr_t [| void_ptr_t; str_t |] in
@@ -302,7 +301,7 @@ let translate (globals, functions) =
                             | A.Fun(ret_t, args_t) ->
                                (ty, {styp = ret_t; sfname = name; sargs = List.map (fun t -> (t, "x")) args_t; sbody = []})
                             | _ -> raise A.Unsupported_constructor)
-                         (List.filter (fun (ty, name) -> match ty with A.Fun(_) -> true | _ -> false) sfdecl.sargs) in
+                         (List.filter (fun (ty, _) -> match ty with A.Fun(_) -> true | _ -> false) sfdecl.sargs) in
 
     let add_local_fdecl vars fdecls (t, n) =
       match t with
@@ -311,7 +310,7 @@ let translate (globals, functions) =
       | _ -> raise A.Unsupported_constructor in
 
     let local_fdecls = 
-      List.fold_left (fun m (ty, sfdecl) ->
+      List.fold_left (fun m (_, sfdecl) ->
                         StringMap.add sfdecl.sfname (lookup local_vars sfdecl.sfname, sfdecl) m) StringMap.empty funcs' in
 
 
@@ -360,7 +359,7 @@ let translate (globals, functions) =
             | A.Gt      -> L.build_icmp L.Icmp.Sgt
             | A.Geq     -> L.build_icmp L.Icmp.Sge
             ) e1' e2' "tmp" builder)
-      | SFunsig (t, bl, e) -> 
+      | SFunsig (t, bl, _) -> 
         let t_list = List.map fst bl in 
         let new_fun_t = L.function_type (ltype_of_typ t) (Array.of_list (List.map ltype_of_typ t_list)) in
         L.define_function "temp" new_fun_t the_module 
@@ -381,7 +380,8 @@ let translate (globals, functions) =
          | SNull -> (match t with
            | A.Int -> SIntlit 0
            | A.Bool -> SBoollit false
-           | A.String -> SStringlit "")
+           | A.String -> SStringlit ""
+           | _ -> raise A.Unsupported_constructor)
          | _ -> v
          in
          let e' = expr fdecls vars builder (t, v) in
@@ -397,7 +397,8 @@ let translate (globals, functions) =
                                 (match src with
                                  | (A.Int, _) -> add_edge_int_func
                                  | (A.Bool, _) -> add_edge_bool_func
-                                 | (A.String, _) -> add_edge_str_func),
+                                 | (A.String, _) -> add_edge_str_func
+                                 | _ -> raise A.Unsupported_constructor),
                                 expr fdecls vars builder src,
                                 expr fdecls vars builder dst
                              | _ -> raise A.Unsupported_constructor
@@ -413,7 +414,7 @@ let translate (globals, functions) =
          | (A.Bool, _) -> ignore (L.build_call set_edge_w_bool_func [| e; w'; L.const_int i1_t 1 |] "" builder)
          | (A.String, SNull) -> ignore (L.build_call set_edge_w_str_func [| e; w'; L.const_int i1_t 0 |] "" builder)
          | (A.String, _) -> ignore (L.build_call set_edge_w_str_func [| e; w'; L.const_int i1_t 1 |] "" builder)
-         | _ -> () (* TODO *));
+         | _ -> raise A.Unsupported_constructor);
          e
       | SNodeExpr (l, d) ->
          let l' = expr fdecls vars builder l in
@@ -423,7 +424,7 @@ let translate (globals, functions) =
           | (A.Int, _) -> ignore (L.build_call set_node_label_int_func [| n; l' |] "" builder)
           | (A.Bool, _) -> ignore (L.build_call set_node_label_bool_func [| n; l' |] "" builder)
           | (A.String, _) -> ignore (L.build_call set_node_label_str_func [| n; l' |] "" builder)
-          | _ -> () (* TODO *));
+          | _ -> raise A.Unsupported_constructor);
          (match d with
           | (A.Int, v) ->
             if v = SNull
@@ -437,7 +438,7 @@ let translate (globals, functions) =
             if v = SNull
             then ignore (L.build_call set_node_data_str_func [| n; L.const_null str_t; L.const_int i1_t 0 |] "" builder)
             else ignore (L.build_call set_node_data_str_func [| n; d'; L.const_int i1_t 1 |] "" builder)
-          | _ -> () (* TODO *));
+          | _ -> raise A.Unsupported_constructor);
          n
       | SNull ->
          (match ty with
@@ -465,11 +466,12 @@ let translate (globals, functions) =
             (match l_typ with
              | A.Int -> L.build_call remove_node_int_func [| g_ptr; l' |] "tmp_data" builder
              | A.String -> L.build_call remove_node_str_func [| g_ptr; l' |] "tmp_data" builder
-             | A.Bool -> L.build_call remove_node_bool_func [| g_ptr; l' |] "tmp_data" builder)
+             | A.Bool -> L.build_call remove_node_bool_func [| g_ptr; l' |] "tmp_data" builder
+             | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
     | "remove_edge" ->
          (match args with
-          | ((src_typ, _) as src) :: ((dst_typ, _) as dst) :: [] ->
+          | ((src_typ, _) as src) :: dst :: [] ->
              let g_ptr = expr fdecls vars builder e in
              let src_ptr = expr fdecls vars builder src in
              let dst_ptr = expr fdecls vars builder dst in
@@ -514,7 +516,8 @@ let translate (globals, functions) =
          (match ty with
          | A.String -> ret
          | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
-         | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+         | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+         | _ -> raise A.Unsupported_constructor)
     | "has_node" ->
          (match args with
           | ((n_typ, _) as n) :: [] ->
@@ -523,17 +526,20 @@ let translate (globals, functions) =
             (match n_typ with
              | A.Int -> L.build_call graph_has_node_int_func [| g_ptr; n' |] "tmp_data" builder
              | A.String -> L.build_call graph_has_node_str_func [| g_ptr; n' |] "tmp_data" builder
-             | A.Bool -> L.build_call graph_has_node_bool_func [| g_ptr; n' |] "tmp_data" builder)
+             | A.Bool -> L.build_call graph_has_node_bool_func [| g_ptr; n' |] "tmp_data" builder
+             | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
     | "get_data" ->
          let n_ptr = expr fdecls vars builder e in
          let ret = L.build_call get_node_data_func [| n_ptr |] "tmp_data" builder in
          (match ty with
          | A.String -> ret
-         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder)
+         | A.Bool -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+         | A.Int -> L.build_load (L.build_bitcast ret i32_ptr_t "bitcast" builder) "deref" builder
+         | _ -> raise A.Unsupported_constructor)
     | "set_edge" ->
          (match args with
-          | ((src_typ, _) as src) :: ((dst_typ, _) as dst) :: ((w_typ, _) as w) :: [] ->
+          | ((src_typ, _) as src) :: dst :: ((w_typ, _) as w) :: [] ->
              let g_ptr = expr fdecls vars builder e in
              let src' = expr fdecls vars builder src in
              let dst' = expr fdecls vars builder dst in
@@ -547,15 +553,17 @@ let translate (globals, functions) =
              | (A.Bool, A.String) -> L.build_call graph_set_edge_bool_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.String, A.Int) -> L.build_call graph_set_edge_str_int_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
              | (A.Int, A.String) -> L.build_call graph_set_edge_int_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
-             | (A.String, A.String) -> L.build_call graph_set_edge_str_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder)
-          | ((src_typ, _) as src) :: ((dst_typ, _) as dst) :: [] ->
+             | (A.String, A.String) -> L.build_call graph_set_edge_str_str_func [| g_ptr; src'; dst'; w' |] "tmp_data" builder
+             | _ -> raise A.Unsupported_constructor)
+          | ((src_typ, _) as src) :: dst :: [] ->
              let g_ptr = expr fdecls vars builder e in
              let src' = expr fdecls vars builder src in
              let dst' = expr fdecls vars builder dst in
              (match src_typ with
               | A.Int -> L.build_call graph_set_edge_int_func [| g_ptr; src'; dst' |] "tmp_data" builder
               | A.String -> L.build_call graph_set_edge_str_func [| g_ptr; src'; dst' |] "tmp_data" builder
-              | A.Bool -> L.build_call graph_set_edge_bool_func [| g_ptr; src'; dst' |] "tmp_data" builder)
+              | A.Bool -> L.build_call graph_set_edge_bool_func [| g_ptr; src'; dst' |] "tmp_data" builder
+              | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
     | "set_data" ->
          (match args with
@@ -630,7 +638,7 @@ let translate (globals, functions) =
           | _ -> raise A.Unsupported_constructor)
     | "find" ->
          (match e, args with
-          | (A.Graph(lt, dt, wt), _), d :: [] ->
+          | (A.Graph(_, dt, _), _), d :: [] ->
             let g_ptr = expr fdecls vars builder e in
             let d' = expr fdecls vars builder d in
             (match dt with
@@ -661,6 +669,7 @@ let translate (globals, functions) =
              | A.String -> L.build_call bfs_str_func [|g_ptr; l'|] "bfs_str" builder
              | _ -> raise A.Unsupported_constructor)
           | _ -> raise A.Unsupported_constructor)
+    | _ -> raise A.Unsupported_constructor
     in
  
     let add_terminal builder instr =
@@ -685,7 +694,6 @@ let translate (globals, functions) =
           (* Get the function's llvalue*)
           let vars' = add_local_var builder vars (ty, s) in
           let ll_fun_val = expr fdecls vars' builder e in
-          let ll_fun_type = L.type_of ll_fun_val in
           let fdecls' = StringMap.add var_name (ll_fun_val, sfdecl) fdecls in
           let builder' = L.builder_at_end context (L.entry_block ll_fun_val) in
           let new_locals = List.fold_left2 (add_arg builder') StringMap.empty sfdecl.sargs (Array.to_list (L.params ll_fun_val)) in 
@@ -792,7 +800,8 @@ let translate (globals, functions) =
            let hd_edge_w = (match wt with
             | A.Int -> L.build_call get_edge_w_int_func [| hd_edge |] "hd_edge_w" builder
             | A.Bool -> L.build_call get_edge_w_bool_func [| hd_edge |] "hd_edge_w" builder
-            | A.String -> L.build_call get_edge_w_str_func [| hd_edge |] "hd_edge_w" builder) in
+            | A.String -> L.build_call get_edge_w_str_func [| hd_edge |] "hd_edge_w" builder
+            | _ -> raise A.Unsupported_constructor) in
            ignore(L.build_store hd_edge edge_ptr builder);
            ignore(L.build_store hd_edge_src src_ptr builder);
            ignore(L.build_store hd_edge_dst dst_ptr builder);
@@ -814,7 +823,8 @@ let translate (globals, functions) =
            let next_edge_w = (match wt with
             | A.Int -> L.build_call get_edge_w_int_func [| next_edge |] "next_edge_w" builder'
             | A.Bool -> L.build_call get_edge_w_bool_func [| next_edge |] "next_edge_w" builder'
-            | A.String -> L.build_call get_edge_w_str_func [| next_edge |] "next_edge_w" builder') in
+            | A.String -> L.build_call get_edge_w_str_func [| next_edge |] "next_edge_w" builder'
+            | _ -> raise A.Unsupported_constructor) in
            ignore(L.build_store next_edge edge_ptr builder');
            ignore(L.build_store next_edge_src src_ptr builder');
            ignore(L.build_store next_edge_dst dst_ptr builder');
