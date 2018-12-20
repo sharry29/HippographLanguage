@@ -4,17 +4,15 @@
 
 /* constants */
 
-int VOIDTYPE = 1;
-int INTTYPE  = 2;
-int STRTYPE  = 3;
-int BOOLTYPE = 4;
+int INTTYPE  = 1;
+int STRTYPE  = 2;
+int BOOLTYPE = 3;
 
 /* data structures */
 
 typedef union primitive {
   int *i;
   char *s;
-  void *v;
 } primitive;
 
 typedef struct node node;
@@ -203,8 +201,6 @@ void *get_node_label(node *n) {
     label = (void *) n -> label -> i;
   } else if (typ == STRTYPE) {
     label = (void *) n -> label -> s;
-  } else if (typ == VOIDTYPE) {
-    label = (void *) n -> label -> v;
   }
   return label;
 }
@@ -217,8 +213,6 @@ void *get_node_data(node *n) {
     data = (void *) n -> data -> i;
   } else if (typ == STRTYPE) {
     data = (void *) n -> data -> s;
-  } else if (typ == VOIDTYPE) {
-    data = (void *) n -> data -> v;
   }
   return data;  // not guaranteed to return valid value if not has_val
 }

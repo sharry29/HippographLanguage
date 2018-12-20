@@ -13,12 +13,10 @@
 %token PLUS MINUS TIMES DIVIDE SEQUENCE ASSIGN EOF
 %token LBRACE RBRACE DOT COMMA LPAREN RPAREN LANGLE RANGLE LBRAK RBRAK SQUOTE DQUOTE COLON
 %token EQ NEQ LEQ GEQ AND OR NOT
-%token INTTYPE BOOLTYPE CHARTYPE FLOATTYPE STRINGTYPE FUNTYPE GRAPHTYPE NODETYPE VOIDTYPE
+%token INTTYPE BOOLTYPE STRINGTYPE FUNTYPE GRAPHTYPE NODETYPE VOIDTYPE
 %token LUEDGE RUEDGE LDEDGE RDEDGE
 %token IF ELSE NOELSE WHILE FOR FORNODE FOREDGE IN NULL RETURN
 %token <int> INTLIT
-%token <string> FLOATLIT
-%token <char> CHARLIT
 %token <string> STRINGLIT
 %token <bool> BOOLLIT
 %token <string> VARIABLE
@@ -78,8 +76,6 @@ typ:
   VOIDTYPE   { Void }
 | INTTYPE    { Int }
 | BOOLTYPE   { Bool }
-| CHARTYPE   { Char }
-| FLOATTYPE  { Float}
 | STRINGTYPE { String }
 | FUNTYPE    { Fun }
 | GRAPHTYPE LANGLE typ COLON typ COMMA typ RANGLE  { Graph($3, $5, $7) }
@@ -109,8 +105,6 @@ stmt:
 
 expr:
   INTLIT                { Intlit($1) }
-| FLOATLIT              { Floatlit($1) }
-| CHARLIT               { Charlit($1) }
 | STRINGLIT             { Stringlit($1) }
 | BOOLLIT               { Boollit($1) }
 | typ LPAREN args_opt RPAREN LPAREN expr RPAREN { Funsig($1, $3, $6) }

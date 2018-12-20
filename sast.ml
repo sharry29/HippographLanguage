@@ -5,9 +5,7 @@ open Ast
 type sexpr = typ * sx
 and sx = 
 	  SIntlit of int
-  | SCharlit of char
   | SStringlit of string
-  | SFloatlit of string
   | SBoollit of bool
   | SFunsig of typ * binding list * sexpr
   | SNull
@@ -51,7 +49,6 @@ let rec string_of_sexpr (t, e) =
     SIntlit(l) -> string_of_int l
   | SBoollit(true) -> "true"
   | SBoollit(false) -> "false"
-  | SFloatlit(l) -> l
   | SVar(s) -> s
   | SStringlit(l) -> l
   | SFunsig(typ, bl, e) -> " fun: " ^ (string_of_typ typ) ^ " (" ^ (String.concat "" (List.map string_of_svdecl bl)) ^ ") { " ^ string_of_sexpr e ^ " }"

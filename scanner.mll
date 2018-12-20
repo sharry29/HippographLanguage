@@ -37,8 +37,6 @@ rule token = parse
 | "not"    { NOT }
 | "int"    { INTTYPE }
 | "bool"   { BOOLTYPE }
-| "char"   { CHARTYPE }
-| "float"  { FLOATTYPE }
 | "string" { STRINGTYPE }
 | "fun"    { FUNTYPE }
 | "void"   { VOIDTYPE }
@@ -58,8 +56,6 @@ rule token = parse
 | "NULL"   { NULL }
 | "return" { RETURN }
 | ['0'-'9']+ as int_lit                 { INTLIT(int_of_string int_lit) }
-| '\'' ([^'\''] as char_lit) '\''       { CHARLIT(char_lit) }
-| ['0'-'9']*'.'['0'-'9']+ as float_lit  { FLOATLIT(float_lit)}
 | '\"' ([^'\"']* as string_lit) '\"'    { STRINGLIT(string_lit) }
 | ("true" | "false") as bool_lit        { BOOLLIT(bool_of_string bool_lit) }
 | ['a'-'z' 'A'-'Z']['0'-'9' 'a'-'z' 'A'-'Z' '_']* as id { VARIABLE(id) }

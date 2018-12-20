@@ -1,7 +1,5 @@
 type typ =
     Int
-  | Float
-  | Char
   | Fun
   | String
   | Bool
@@ -32,9 +30,7 @@ type unop =
 
 type expr = 
   | Intlit of int
-  | Charlit of char
   | Stringlit of string
-  | Floatlit of string
   | Boollit of bool
   | Funsig of typ * binding list * expr
   | Null
@@ -102,9 +98,7 @@ let string_of_uop = function
 let rec string_of_typ = function
     Int    -> "int"
   | Bool   -> "bool"
-  | Float  -> "float"
   | Void   -> "void"
-  | Char   -> "char"
   | Fun    -> "fun"
   | String -> "string"
   | Void   -> "void"
@@ -116,7 +110,6 @@ let string_of_vdecl (t, var) = string_of_typ t ^ " " ^ var ^ "; "
 
 let rec string_of_expr = function
     Intlit(l) -> string_of_int l
-  | Floatlit(l) -> l
   | Boollit(true) -> "true"
   | Boollit(false) -> "false"
   | Var(s) -> s

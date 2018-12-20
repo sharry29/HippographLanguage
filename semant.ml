@@ -149,9 +149,7 @@ let check (globals, funcs) =
     (* Return a semantically-checked expression, i.e., with a type *)
     let rec expr fdecls vars = function
         Intlit l  -> (Int, SIntlit l)
-      | Floatlit l  -> (Float, SFloatlit l)
       | Boollit l   -> (Bool, SBoollit l)
-      | Charlit l   -> (Char, SCharlit l)
       | Stringlit l -> (String, SStringlit l)
       | Null -> (Bool, SNull)
       | Funsig (t, bl, e) ->
@@ -246,9 +244,8 @@ let check (globals, funcs) =
       (* Determine expression type based on operator and operand types *)
       let ty = match op with
                | Add | Sub | Mul | Div when same && t1 = Int -> Int
-               | Add | Sub | Mul | Div when same && t1 = Float -> Float
                | Eq  | Neq when same -> Bool
-               | Lt | Leq | Gt | Geq when same && (t1 = Int || t1 = Float) -> Bool
+               | Lt | Leq | Gt | Geq when same && (t1 = Int) -> Bool
                | And | Or when same && t1 = Bool -> Bool
                | _ -> 
                   raise (Failure ("illegal binary operator " ^
